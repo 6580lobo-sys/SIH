@@ -1,0 +1,6 @@
+name: "Healthy Baseline (Standard Day)"
+environment: standard_day
+throttle_mode: smooth
+duration_s: 30
+faults: []
+output_csv: data/demo/demo_healthy.csv
