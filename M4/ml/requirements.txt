@@ -1,0 +1,29 @@
+# Core
+
+# Data
+numpy
+pandas
+
+# ML
+scikit-learn
+joblib
+
+# Explainability
+shap
+
+# Visualization
+matplotlib
+seaborn
+plotly
+
+# API Serving
+fastapi
+uvicorn
+pydantic
+
+# Utilities
+python-dotenv
+tqdm
+
+# Testing
+pytest

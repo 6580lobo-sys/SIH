@@ -1,0 +1,84 @@
+1. Define Feature Schema
+   Build one clean ML input table:
+   timestamp, mission_phase,
+   rpm, cht, egt, oil_pressure, oil_temp, manifold_pressure, vibration, fuel_flow,
+   residual_rpm, residual_cht, residual_egt, residual_oil_pressure, residual_vibration,
+   rolling_mean_*, rolling_std_*, delta_*,
+   health_index,
+   label_fault_type, label_anomaly
+2. Build Baseline Anomaly Detector
+   Start simple and demo-friendly.
+   - Train IsolationForest only on healthy data.
+   - Output anomaly score per timestep.
+   - Mark anomaly when score crosses threshold.
+   - Tune threshold to reduce false alarms.
+   This gives you a working Day 2 result.
+3. Build Fault Classifier
+   Train a supervised classifier on injected fault data.
+   Good hackathon choices:
+   - RandomForestClassifier for fast, explainable baseline.
+   - XGBoost/LightGBM if available.
+   - LSTM/TCN only after baseline works.
+   Classes:
+   healthy
+   overheating
+   oil_pressure_drop
+   vibration_bearing_fault
+   misfire_or_injector_fault
+   fuel_mixture_drift
+4. Add Time-Series Windows
+   A single sensor point is weak. Use sliding windows.
+   Example:
+   - Window size: last 30-60 seconds.
+   - Features: mean, std, min, max, slope, last value for each sensor/residual.
+   - Label window by active fault type.
+   This makes classification more stable and realistic.
+5. Explainability Layer
+   For every alert, return why:
+   {
+     "fault_class": "oil_pressure_drop",
+     "confidence": 0.91,
+     "top_features": [
+       "oil_pressure_residual falling",
+       "oil_pressure rolling mean below expected",
+       "oil_temp increasing"
+     ],
+     "operator_message": "Likely oil-pressure degradation: measured oil pressure is persistently below physics-model expectation while oil temperature is rising."
+   }
+   Use SHAP if possible. If time is tight, use model feature importance plus rule templates. That is acceptable and easy to present.
+6. Evaluation
+   Your M4 metrics should include:
+   - Anomaly precision.
+   - Anomaly recall.
+   - Fault classification accuracy/F1.
+   - Confusion matrix.
+   - False alarm rate during healthy runs.
+   - Detection delay: time from injected fault start to first alert.
+7. Integration
+   Expose one function/API:
+   predict_health(window_df) -> {
+       anomaly_score,
+       is_anomaly,
+       health_state,
+       fault_class,
+       confidence,
+       explanation,
+       top_features
+   }
+   M5 dashboard can call this and display alerts. M6 can plug it into the runtime.
+7-Day M4 Plan
+Day 1: Finalize feature schema with M2/M3.
+Day 2: Train Isolation Forest on healthy telemetry; produce anomaly score.
+Day 3: Train fault classifier and generate confusion matrix.
+Day 4: Integrate residuals and health index as features; improve model.
+Day 5: Add uncertainty/confidence and optional RUL support with M2.
+Day 6: Bugfix, threshold tuning, dashboard integration.
+Day 7: Prepare demo script: healthy run -> fault injection -> anomaly -> fault class -> explanation.
+Demo Story
+Show this live:
+1. Engine starts healthy.
+2. M3 injects oil-pressure drop or overheating.
+3. M4 detects anomaly before hard threshold failure.
+4. Classifier says the likely fault.
+5. Explainability panel shows the cause.
+6. Dashboard shows confidence and recommended maintenance action.

@@ -1,0 +1,158 @@
+{
+    "accuracy": 0.9455732946298984,
+    "macro_f1": 0.8571371861042796,
+    "weighted_f1": 0.9332961063692365,
+    "per_class_report": {
+        "healthy": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 3585.0
+        },
+        "overheating": {
+            "precision": 0.8922967189728959,
+            "recall": 1.0,
+            "f1-score": 0.943083301922352,
+            "support": 1251.0
+        },
+        "oil_pressure_drop": {
+            "precision": 0.9963570127504554,
+            "recall": 0.9767857142857143,
+            "f1-score": 0.9864743011722272,
+            "support": 1120.0
+        },
+        "vibration_bearing_fault": {
+            "precision": 0.8402100525131283,
+            "recall": 1.0,
+            "f1-score": 0.9131675499388504,
+            "support": 1120.0
+        },
+        "misfire_or_injector_fault": {
+            "precision": 1.0,
+            "recall": 0.9529737206085753,
+            "f1-score": 0.9759206798866855,
+            "support": 723.0
+        },
+        "fuel_mixture_drift": {
+            "precision": 0.9772727272727273,
+            "recall": 1.0,
+            "f1-score": 0.9885057471264368,
+            "support": 989.0
+        },
+        "cooling_system_fault": {
+            "precision": 1.0,
+            "recall": 0.9941724941724942,
+            "f1-score": 0.9970777323202805,
+            "support": 858.0
+        },
+        "engine_overspeed": {
+            "precision": 1.0,
+            "recall": 0.4452296819787986,
+            "f1-score": 0.6161369193154034,
+            "support": 566.0
+        },
+        "oil_pressure_drop_escalating": {
+            "precision": 0.8488372093023255,
+            "recall": 1.0,
+            "f1-score": 0.9182389937106918,
+            "support": 146.0
+        },
+        "mixed_vibration_bearing_fault__engine_overspeed": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "mixed_engine_overspeed__overheating": {
+            "precision": 0.5658914728682171,
+            "recall": 1.0,
+            "f1-score": 0.7227722772277227,
+            "support": 146.0
+        },
+        "mixed_vibration_bearing_fault__misfire_or_injector_fault": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "mixed_fuel_mixture_drift__overheating": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "mixed_misfire_or_injector_fault__oil_pressure_drop": {
+            "precision": 1.0,
+            "recall": 0.9726027397260274,
+            "f1-score": 0.9861111111111112,
+            "support": 146.0
+        },
+        "overheating_escalating": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 146.0
+        },
+        "mixed_overheating__cooling_system_fault": {
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1-score": 0.6666666666666666,
+            "support": 146.0
+        },
+        "mixed_cooling_system_fault__oil_pressure_drop": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "mixed_cooling_system_fault__misfire_or_injector_fault": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "mixed_oil_pressure_drop__vibration_bearing_fault": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "mixed_oil_pressure_drop__overheating": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "mixed_fuel_mixture_drift__vibration_bearing_fault": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "vibration_bearing_fault_escalating": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 146.0
+        },
+        "mixed_overheating__misfire_or_injector_fault": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 146.0
+        },
+        "accuracy": 0.9455732946298984,
+        "macro avg": {
+            "precision": 0.8530810953773803,
+            "recall": 0.8844245369900701,
+            "f1-score": 0.8571371861042796,
+            "support": 12402.0
+        },
+        "weighted avg": {
+            "precision": 0.936243462618927,
+            "recall": 0.9455732946298984,
+            "f1-score": 0.9332961063692365,
+            "support": 12402.0
+        }
+    }
+}
