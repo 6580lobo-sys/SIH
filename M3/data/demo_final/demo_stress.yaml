@@ -1,0 +1,16 @@
+# FROZEN FOR DEMO - do not regenerate without team sign-off
+name: "Misfire + Vibration Stress Combo"
+environment: standard_day
+throttle_mode: rapid_transient
+duration_s: 30
+faults:
+  - type: misfire
+    start_s: 5
+    duration_s: 15
+    severity: 0.8
+  - type: vibration_spike
+    start_s: 10
+    duration_s: 15
+    severity: 0.7
+    pattern: intermittent
+output_csv: data/demo_final/demo_stress.csv
