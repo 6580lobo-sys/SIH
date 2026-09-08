@@ -1,9 +1,0 @@
-name: "Bad Config Test 2"
-environment: standard_day
-throttle_mode: smooth
-duration_s: 30
-faults:
-  - type: bad_fault_type # BAD
-    start_s: 10
-    duration_s: 15
-    severity: -0.5
