@@ -74,6 +74,21 @@ class CustomScenarioRequest(BaseModel):
     throttle_mode: Optional[str] = "smooth"
 
 
+@app.get("/")
+def root():
+    return {
+        "service": "DRDO SIH26054 Aero-Piston Engine Digital Twin Backend",
+        "status": "online",
+        "orchestrator_running": orchestrator._running,
+        "current_scenario": orchestrator._current_scenario,
+        "tick_count": orchestrator._tick_count,
+        "docs_url": "http://localhost:8000/docs",
+        "latest_telemetry_url": "http://localhost:8000/api/telemetry/latest",
+        "health_url": "http://localhost:8000/health",
+        "scenarios_url": "http://localhost:8000/api/scenarios"
+    }
+
+
 @app.get("/health")
 def health():
     return {

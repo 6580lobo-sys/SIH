@@ -237,6 +237,22 @@ class AppCoordinator {
     updateVal('stat-can-pkts', `${system.canPackets.toLocaleString()} / MIN`);
     updateVal('stat-latency', `${system.latency} ms`);
 
+    // Top Command Bar Backend Connection Badge
+    const beText = document.getElementById('backend-status-text');
+    const beDot = document.getElementById('backend-status-dot');
+    const beBadge = document.getElementById('backend-status-badge');
+    if (beText && beDot && beBadge) {
+      if (system.backendConnected) {
+        beText.textContent = 'LIVE STREAM (PORT 8000)';
+        beDot.style.background = 'var(--green-primary)';
+        beBadge.style.color = 'var(--green-primary)';
+      } else {
+        beText.textContent = 'CLIENT PHYSICS (OFFLINE)';
+        beDot.style.background = 'var(--amber-text)';
+        beBadge.style.color = 'var(--amber-text)';
+      }
+    }
+
     // Redraw sparklines
     if (window.AeroCharts) {
       window.AeroCharts.drawSparkline('sparkline-rpm', history.rpm, { min: 2400, max: 2480 });
@@ -435,7 +451,7 @@ class AppCoordinator {
     }
   }
 
-  runProbeEvaluation() {
+  async runProbeEvaluation() {
     const getVal = (id, def) => {
       const el = document.getElementById(id);
       return el ? Number(el.value) : def;
@@ -453,7 +469,7 @@ class AppCoordinator {
       missionDurationHours: getVal('slider-probe-duration', 8.0),
     };
 
-    const res = this.telemetryEngine.evaluateLiveProbe(probe);
+    const res = await this.telemetryEngine.evaluateLiveProbe(probe);
 
     const verdictEl = document.getElementById('probe-out-verdict');
     if (verdictEl) {
