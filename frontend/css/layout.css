@@ -1,0 +1,422 @@
+/* ==========================================================================
+   AEROSPACE DESKTOP GCS LAYOUT ARCHITECTURE
+   ========================================================================== */
+
+.app-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   1. TOP COMMAND BAR (Technical Header Strip)
+   ========================================================================== */
+.top-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--top-bar-height);
+  min-height: var(--top-bar-height);
+  max-height: var(--top-bar-height);
+  padding: 0 var(--space-md);
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  z-index: 50;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.system-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 12px;
+  border-right: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.brand-icon {
+  width: 20px;
+  height: 20px;
+  stroke: var(--text-primary);
+  fill: none;
+  flex-shrink: 0;
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.brand-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.header-meta-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.meta-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.meta-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.meta-pill-nominal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: var(--green-bg);
+  border: 1px solid var(--green-border);
+  color: var(--green-text);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.meta-pill-nominal::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--green-dot);
+}
+
+.operator-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding-left: var(--space-md);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.operator-badge {
+  width: 26px;
+  height: 26px;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   2. MAIN WORKSPACE CONTAINER (Nav Rail + Content Area)
+   ========================================================================== */
+.workspace-body {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - var(--top-bar-height) - var(--status-bar-height));
+  overflow: hidden;
+}
+
+/* 2A. LEFT NAVIGATION RAIL */
+.nav-rail {
+  width: var(--nav-rail-width);
+  min-width: var(--nav-rail-width);
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  z-index: 5;
+}
+
+.nav-rail-items {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  list-style: none;
+}
+
+.nav-button {
+  width: 100%;
+  height: 64px;
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.nav-button:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-subtle);
+}
+
+.nav-button.active {
+  color: var(--text-primary);
+  background-color: var(--bg-app);
+}
+
+.nav-button.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  background-color: var(--text-primary);
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.1;
+  padding: 0 4px;
+}
+
+.nav-rail-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-xs) 4px;
+  border-top: 1px solid var(--border-subtle);
+  margin: 0 6px;
+  text-align: center;
+}
+
+.rail-link-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--green-dot);
+  box-shadow: 0 0 0 2px var(--green-bg);
+}
+
+.rail-status-text {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   3. VIEW CONTAINER & VIEWPORT SWITCHER
+   ========================================================================== */
+.view-viewport {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--bg-app);
+  position: relative;
+}
+
+.view-panel {
+  display: none;
+  width: 100%;
+  min-height: 100%;
+  padding: var(--space-lg) var(--space-xl);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.view-panel.active {
+  display: block;
+  opacity: 1;
+}
+
+/* ==========================================================================
+   4. BOTTOM INSTRUMENTATION STATUS STRIP
+   ========================================================================== */
+.bottom-status-strip {
+  height: var(--status-bar-height);
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-md);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  z-index: 10;
+}
+
+.status-metrics {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.status-metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-metric strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.status-dot-ok {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--green-dot);
+}
+
+/* ==========================================================================
+   5. MODAL / FORENSIC DRAWER
+   ========================================================================== */
+.forensic-drawer-overlay {
+  position: fixed;
+  top: var(--top-bar-height);
+  right: 0;
+  bottom: var(--status-bar-height);
+  left: 0;
+  background-color: rgba(24, 27, 30, 0.25);
+  backdrop-filter: blur(1px);
+  z-index: 100;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.forensic-drawer-overlay.open {
+  display: flex;
+  justify-content: flex-end;
+  opacity: 1;
+}
+
+.forensic-drawer {
+  width: 520px;
+  height: 100%;
+  background-color: var(--bg-surface);
+  border-left: 1px solid var(--border-medium);
+  box-shadow: var(--shadow-drawer);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.forensic-drawer-overlay.open .forensic-drawer {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-surface-subtle);
+}
+
+.drawer-body {
+  padding: var(--space-lg);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.drawer-close-btn {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.drawer-close-btn:hover {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}

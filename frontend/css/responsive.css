@@ -1,0 +1,67 @@
+/* ==========================================================================
+   RESPONSIVE & DESKTOP GCS SCALING BEHAVIOR
+   ========================================================================== */
+
+@media (max-width: 1400px) {
+  .overview-grid {
+    grid-template-columns: 1.1fr 0.9fr;
+    grid-gap: var(--space-md);
+  }
+  
+  .telemetry-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .engine-viewport-container {
+    height: 350px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+    grid-gap: var(--space-lg);
+  }
+  
+  .overview-bottom-grid {
+    grid-template-columns: 1fr;
+    grid-gap: var(--space-lg);
+  }
+  
+  .simulation-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .nav-rail {
+    width: 64px;
+    min-width: 64px;
+  }
+  
+  .nav-label {
+    display: none;
+  }
+  
+  .top-bar-left .header-meta-group {
+    display: none;
+  }
+  
+  .telemetry-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Print/Audit export mode */
+@media print {
+  body {
+    background: #FFFFFF !important;
+  }
+  .nav-rail, .top-command-bar, .bottom-status-strip, .engine-mode-toggles {
+    display: none !important;
+  }
+  .view-viewport {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}

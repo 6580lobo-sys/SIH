@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aero-Piston Engine Digital Twin & Predictive Health Monitoring | Defence UAV Ground Control Station</title>
+  <meta name="description" content="Defence-grade MALE UAV Aero-Piston Engine Digital Twin and Predictive Health Monitoring Platform for Ground Control Stations and Engine Test Facilities.">
+  
+  <!-- Typography: Google Fonts (IBM Plex Sans, IBM Plex Mono, Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheets -->
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/engine-visual.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- ==========================================================================
+         TOP COMMAND BAR
+         ========================================================================== -->
+    <header class="top-command-bar" id="app-command-bar">
+      <div class="top-bar-left">
+        <div class="system-brand">
+          <svg class="brand-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" stroke-width="1.8"/>
+            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke-width="1.6"/>
+          </svg>
+          <div>
+            <div class="brand-title">DRDO ADE &bull; DIGITAL TWIN</div>
+            <div class="brand-sub">TAPAS-BH-201 &bull; PS26054</div>
+          </div>
+        </div>
+
+        <!-- Twin Engine Switcher (Port / Starboard) -->
+        <div class="meta-item">
+          <span class="meta-label">TWIN PROPULSION</span>
+          <div class="engine-switcher-group" style="margin-top: 2px;">
+            <button class="engine-switch-btn active" id="btn-engine-port" title="Port Engine AE-01">PORT (AE-01)</button>
+            <button class="engine-switch-btn" id="btn-engine-stbd" title="Starboard Engine AE-02">STBD (AE-02)</button>
+          </div>
+        </div>
+
+        <div class="header-meta-group">
+          <div class="meta-item">
+            <span class="meta-label">AIRFRAME</span>
+            <button class="eng-btn" id="btn-view-airframe-specs" style="padding: 2px 7px; font-size: 10.5px; height: 21px; white-space: nowrap;">
+              TAPAS-BH-201 &bull; SPECS &darr;
+            </button>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">MISSION</span>
+            <span class="meta-value" style="font-size: 10.5px;">ISR-04 LOITER</span>
+          </div>
+        </div>
+
+        <!-- M3 Real-Time Fault Injection Simulator -->
+        <div class="fault-injector-bar">
+          <span style="font-weight: 700; color: var(--amber-text); letter-spacing: 0.04em;">M3 FAULT:</span>
+          <select id="m3-fault-selector" class="fault-select">
+            <option value="healthy">00. HEALTHY (NOMINAL)</option>
+            <option value="misfire_or_injector_fault" selected>01. INJECTOR IMBALANCE (CYL 3)</option>
+            <option value="vibration_bearing_fault">02. BEARING VIBRATION (2.54x)</option>
+            <option value="oil_pressure_drop">03. OIL PRESSURE LOSS (-2.44 bar)</option>
+            <option value="overheating">04. THERMAL OVERHEATING</option>
+            <option value="fuel_mixture_drift">05. FUEL MIXTURE DRIFT</option>
+            <option value="cooling_system_fault">06. COOLING BAFFLE FAULT</option>
+            <option value="engine_overspeed">07. GOVERNOR OVERSPEED</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="top-bar-right">
+        <button class="eng-btn active" id="btn-generate-audit-report" style="font-size: 10.5px; padding: 3px 10px; white-space: nowrap;">
+          &darr; DRDO AUDIT REPORT
+        </button>
+
+        <div class="header-meta-group">
+          <div class="meta-item">
+            <span class="meta-label">DATA LINK</span>
+            <span class="meta-value" style="color: var(--green-primary); font-size: 10.5px;">C-BAND &bull; 99.4%</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">LAST SYNC</span>
+            <span class="meta-value" id="last-sync-time" style="font-size: 10.5px;">14:32:08 UTC</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">CURRENT UTC</span>
+            <span class="meta-value" id="utc-clock-readout" style="font-weight: 700; font-size: 10.5px;">14:32:19 UTC</span>
+          </div>
+        </div>
+
+        <div class="operator-profile" style="padding-left: 10px;">
+          <div class="operator-badge">HV</div>
+          <div class="meta-item">
+            <span class="meta-label">OPERATOR</span>
+            <span class="meta-value" style="font-size: 10.5px;">FLT-LT H. VANCE</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==========================================================================
+         MAIN WORKSPACE (LEFT RAIL + VIEWPORT)
+         ========================================================================== -->
+    <div class="workspace-body">
+      
+      <!-- 76-82px Restrained Navigation Rail -->
+      <nav class="nav-rail" aria-label="Main Navigation">
+        <ul class="nav-rail-items">
+          <li>
+            <button class="nav-button active" data-view="view-overview" title="System Operational Overview">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+              <span class="nav-label">OVERVIEW</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-telemetry" title="Live Sensor Telemetry Streams">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <path d="M3 18h3l3-9 4 12 4-6h4"/>
+              </svg>
+              <span class="nav-label">TELEMETRY</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-health" title="Engine Subsystem Health Model">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span class="nav-label">HEALTH</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-predictions" title="AI Predictive Degradation & RUL">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <path d="M3 3v18h18"/>
+                <path d="M7 16l4-6 4 3 6-8"/>
+              </svg>
+              <span class="nav-label">PREDICTIONS</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-replay" title="Mission Flight History Replay">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"/>
+                <polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/>
+              </svg>
+              <span class="nav-label">REPLAY</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-simulation" title="Thermodynamic Mission Simulation">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>
+              </svg>
+              <span class="nav-label">SIMULATION</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-diagnostics" title="Fault Forensics & Diagnostic Matrix">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span class="nav-label">DIAGNOSTICS</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-m4-lab" title="M4 AI/ML Diagnostic & SHAP Lab">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              <span class="nav-label">M4 AI LAB</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-maintenance" title="Maintenance Advisories & Work Orders">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+              <span class="nav-label">MAINTENANCE</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-button" data-view="view-history" title="Technician Service Logs">
+              <svg class="nav-icon" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span class="nav-label">HISTORY</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="nav-rail-footer">
+          <div class="rail-link-dot"></div>
+          <div class="rail-status-text">
+            SYSTEM ONLINE<br>
+            LINK ACTIVE
+          </div>
+        </div>
+      </nav>
+
+      <!-- Viewport Panels Container -->
+      <main class="view-viewport" id="main-viewport">
+
+        <!-- ==================================================================
+             VIEW 1: MASTER OVERVIEW (Dominant Asymmetric Composition)
+             ================================================================== -->
+        <section class="view-panel active" id="view-overview">
+          
+          <!-- Central philosophy banner (subtle, non-marketing) -->
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-md); padding-bottom: 6px; border-bottom: 1px solid var(--border-subtle);">
+            <div>
+              <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-tertiary); letter-spacing: 0.08em; text-transform: uppercase;">
+                OPERATIONAL PROFILES &bull; SORTIE ISR-04 &bull; TACTICAL PROPULSION MONITOR
+              </span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary);">
+              “Understand the engine before it becomes a problem.” &bull; ISO-13374 CONDITION MONITORING
+            </div>
+          </div>
+
+          <!-- TOP ASYMMETRICAL ZONE: Engine Cutaway (Left) & Primary Health State (Right) -->
+          <div class="overview-grid">
+            
+            <!-- 5A. PRIMARY ENGINE TECHNICAL CUTAWAY -->
+            <div class="eng-panel" style="padding: 0; overflow: hidden;">
+              <div id="engine-canvas-mount" class="engine-viewport-container">
+                <!-- Injected by EngineVisualizer -->
+              </div>
+            </div>
+
+            <!-- 5B. DOMINANT HEALTH STATEMENT & SUBSYSTEMS SNAPSHOT -->
+            <div class="eng-panel health-statement-panel">
+              <div>
+                <div class="health-status-badge">
+                  ENGINE STATUS: NOMINAL
+                </div>
+                <div class="health-score-huge">
+                  98.2<span>/100</span>
+                </div>
+                <div class="health-primary-text">
+                  No critical abnormalities detected.
+                </div>
+                <div class="health-secondary-text">
+                  All primary propulsion parameters remain inside expected operating envelope. Cylinder 3 EGT trending slightly positive (+4.7%); vibration harmonic elevated but within operational limits.
+                </div>
+              </div>
+
+              <!-- Tri-Metrics -->
+              <div class="health-tri-metrics">
+                <div class="tri-metric-item">
+                  <span class="tri-metric-label">HEALTH INDEX</span>
+                  <span class="tri-metric-value" style="color: var(--green-primary);">98.2 / 100</span>
+                </div>
+                <div class="tri-metric-item">
+                  <span class="tri-metric-label">PREDICTION CONF</span>
+                  <span class="tri-metric-value">94.0 %</span>
+                </div>
+                <div class="tri-metric-item">
+                  <span class="tri-metric-label">DATA QUALITY</span>
+                  <span class="tri-metric-value" style="color: var(--green-primary);">99.1 %</span>
+                </div>
+              </div>
+
+              <!-- Subsystems Mini-Breakdown -->
+              <div style="margin-top: var(--space-md);">
+                <div class="eng-section-header" style="margin-bottom: 6px;">
+                  <span class="eng-heading">SUBSYSTEM HEALTH STATUS</span>
+                  <span class="eng-subheading">CLICK TO INSPECT</span>
+                </div>
+                <div class="subsystems-list">
+                  <div class="subsystem-item" data-part-id="part-cyl-01">
+                    <span class="subsystem-name">COMBUSTION</span>
+                    <span class="subsystem-pct">94%</span>
+                    <div class="subsystem-track"><div class="subsystem-fill fill-nominal" style="width: 94%;"></div></div>
+                    <span class="subsystem-status-tag tag-nominal">STABLE</span>
+                  </div>
+                  <div class="subsystem-item" data-part-id="part-oil-loop">
+                    <span class="subsystem-name">LUBRICATION</span>
+                    <span class="subsystem-pct">98%</span>
+                    <div class="subsystem-track"><div class="subsystem-fill fill-nominal" style="width: 98%;"></div></div>
+                    <span class="subsystem-status-tag tag-nominal">STABLE</span>
+                  </div>
+                  <div class="subsystem-item" data-part-id="part-cyl-03">
+                    <span class="subsystem-name">THERMAL</span>
+                    <span class="subsystem-pct">91%</span>
+                    <div class="subsystem-track"><div class="subsystem-fill fill-watch" style="width: 91%;"></div></div>
+                    <span class="subsystem-status-tag tag-watch">WATCH</span>
+                  </div>
+                  <div class="subsystem-item" data-part-id="part-fuel-system">
+                    <span class="subsystem-name">FUEL</span>
+                    <span class="subsystem-pct">93%</span>
+                    <div class="subsystem-track"><div class="subsystem-fill fill-nominal" style="width: 93%;"></div></div>
+                    <span class="subsystem-status-tag tag-nominal">STABLE</span>
+                  </div>
+                  <div class="subsystem-item" data-part-id="part-prop-shaft">
+                    <span class="subsystem-name">VIBRATION</span>
+                    <span class="subsystem-pct">86%</span>
+                    <div class="subsystem-track"><div class="subsystem-fill fill-watch" style="width: 86%;"></div></div>
+                    <span class="subsystem-status-tag tag-watch">INCREASING</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MIDDLE ZONE: Live Telemetry Matrix (Left) & Predictive Diagnostics (Right) -->
+          <div class="overview-grid">
+            
+            <!-- 6. LIVE TELEMETRY MATRIX -->
+            <div class="eng-panel">
+              <div class="eng-section-header">
+                <div>
+                  <span class="eng-heading">LIVE TELEMETRY</span>
+                  <span class="eng-subheading" style="margin-left: 8px;">CALIBRATED SENSOR STREAM &bull; 1.0 HZ</span>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);">
+                  NORMAL ENVELOPE SHADED
+                </div>
+              </div>
+
+              <div class="telemetry-grid">
+                <!-- RPM -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title">CRANK RPM</span>
+                    <span class="telem-delta delta-stable">+32</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-rpm">2,438</span>
+                    <span class="telem-unit">RPM</span>
+                  </div>
+                  <canvas id="sparkline-rpm" class="sparkline-canvas"></canvas>
+                </div>
+
+                <!-- CHT -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title">PEAK CHT</span>
+                    <span class="telem-delta delta-stable">STABLE</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-cht">167.4</span>
+                    <span class="telem-unit">°C</span>
+                  </div>
+                  <canvas id="sparkline-cht" class="sparkline-canvas"></canvas>
+                </div>
+
+                <!-- EGT (Watch) -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title" style="color: var(--amber-primary);">EXHAUST (EGT)</span>
+                    <span class="telem-delta delta-up">&uarr; 4.7%</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-egt" style="color: var(--amber-primary);">612.8</span>
+                    <span class="telem-unit">°C</span>
+                  </div>
+                  <canvas id="sparkline-egt" class="sparkline-canvas"></canvas>
+                </div>
+
+                <!-- Oil Pressure -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title">OIL PRESSURE</span>
+                    <span class="telem-delta delta-stable">STABLE</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-oilp">4.82</span>
+                    <span class="telem-unit">bar</span>
+                  </div>
+                  <canvas id="sparkline-oilp" class="sparkline-canvas"></canvas>
+                </div>
+
+                <!-- Oil Temperature -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title">OIL TEMP</span>
+                    <span class="telem-delta delta-stable">NOMINAL</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-oilt">94.2</span>
+                    <span class="telem-unit">°C</span>
+                  </div>
+                  <canvas id="sparkline-oilt" class="sparkline-canvas"></canvas>
+                </div>
+
+                <!-- Fuel Flow -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title">FUEL FLOW</span>
+                    <span class="telem-delta delta-stable">STABLE</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-fuel">21.7</span>
+                    <span class="telem-unit">L/hr</span>
+                  </div>
+                  <canvas id="sparkline-fuel" class="sparkline-canvas"></canvas>
+                </div>
+
+                <!-- Vibration (Watch) -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title" style="color: var(--amber-primary);">VIBRATION</span>
+                    <span class="telem-delta delta-up">&uarr; 0.08g</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-vib" style="color: var(--amber-primary);">0.84</span>
+                    <span class="telem-unit">g</span>
+                  </div>
+                  <canvas id="sparkline-vib" class="sparkline-canvas"></canvas>
+                </div>
+
+                <!-- Electrical -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title">BATTERY / ALT</span>
+                    <span class="telem-delta delta-stable">STABLE</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-elec" style="font-size: 15px;">28.4 / 42.1</span>
+                    <span class="telem-unit">V/A</span>
+                  </div>
+                  <canvas id="sparkline-elec" class="sparkline-canvas"></canvas>
+                </div>
+
+                <!-- Injection Timing -->
+                <div class="telem-cell">
+                  <div class="telem-header">
+                    <span class="telem-title">INJECTION TIMING</span>
+                    <span class="telem-delta delta-stable">STABLE</span>
+                  </div>
+                  <div class="telem-body">
+                    <span class="telem-val" id="telem-val-time">24.5</span>
+                    <span class="telem-unit">°BTDC</span>
+                  </div>
+                  <canvas id="sparkline-time" class="sparkline-canvas"></canvas>
+                </div>
+              </div>
+
+              <!-- M1 Physics Residuals Live Strip -->
+              <div style="margin-top: var(--space-xs); padding-top: var(--space-xs); border-top: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                  <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
+                    M1 PHYSICS RESIDUALS (&Delta; = SENSOR &minus; REFERENCE MODEL)
+                  </span>
+                  <span style="font-family: var(--font-mono); font-size: 9.5px; color: var(--text-tertiary);">
+                    EWMA SMOOTHED &bull; ISO-13374
+                  </span>
+                </div>
+                <div class="residuals-grid">
+                  <div class="residual-cell">
+                    <span class="residual-lbl">RES RPM</span>
+                    <span class="residual-val" id="res-val-rpm">+4.2 RPM</span>
+                  </div>
+                  <div class="residual-cell">
+                    <span class="residual-lbl">RES CHT</span>
+                    <span class="residual-val" id="res-val-cht">+1.8 °C</span>
+                  </div>
+                  <div class="residual-cell">
+                    <span class="residual-lbl">RES EGT (CYL 3)</span>
+                    <span class="residual-val watch" id="res-val-egt">+28.7 °C</span>
+                  </div>
+                  <div class="residual-cell">
+                    <span class="residual-lbl">RES OIL P</span>
+                    <span class="residual-val" id="res-val-oilp">-0.04 bar</span>
+                  </div>
+                  <div class="residual-cell">
+                    <span class="residual-lbl">RES OIL T</span>
+                    <span class="residual-val" id="res-val-oilt">+0.6 °C</span>
+                  </div>
+                  <div class="residual-cell">
+                    <span class="residual-lbl">RES FUEL</span>
+                    <span class="residual-val" id="res-val-fuel">+0.35 L/h</span>
+                  </div>
+                  <div class="residual-cell">
+                    <span class="residual-lbl">RES VIBRATION</span>
+                    <span class="residual-val watch" id="res-val-vib">+0.08 g</span>
+                  </div>
+                  <div class="residual-cell">
+                    <span class="residual-lbl">COMPOSITE SCORE</span>
+                    <span class="residual-val" style="color: var(--amber-primary);">0.0657</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 10. PREDICTIVE DIAGNOSTICS & HUMANIZED AI ASSISTANT -->
+            <div class="eng-panel ai-diagnostics-box">
+              <div class="eng-section-header">
+                <div>
+                  <span class="eng-heading">PREDICTIVE DIAGNOSTICS</span>
+                  <span class="eng-subheading" style="margin-left: 8px;">ENGINEERING ASSISTANT &bull; EXPLAINABLE REASONING</span>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);">
+                  MODEL V4.2
+                </div>
+              </div>
+
+              <div class="ai-scores-row">
+                <div class="ai-score-card">
+                  <span class="lbl">ANOMALY SCORE</span>
+                  <span class="val" style="color: var(--amber-primary);">0.18</span>
+                </div>
+                <div class="ai-score-card">
+                  <span class="lbl">FAILURE PROBABILITY</span>
+                  <span class="val" style="color: var(--green-primary);">3.2 %</span>
+                </div>
+                <div class="ai-score-card">
+                  <span class="lbl">MODEL CONFIDENCE</span>
+                  <span class="val">91.0 %</span>
+                </div>
+              </div>
+
+              <!-- The "Why" Reasoning -->
+              <div class="diagnostic-reasoning">
+                <div class="reasoning-row">
+                  <span class="reasoning-label">OBSERVATION</span>
+                  <p class="reasoning-content">
+                    Cylinder 3 EGT is rising faster than expected (+28.7°C divergence) during stable 2,438 RPM loiter cruise.
+                  </p>
+                </div>
+                <div class="reasoning-row">
+                  <span class="reasoning-label">POSSIBLE CAUSE</span>
+                  <p class="reasoning-content">
+                    Injector imbalance (nozzle micro-coking or solenoid response lag). Physics model corroborates 4.2% lean skew on Bank A.
+                  </p>
+                </div>
+                <div class="reasoning-row" style="display: flex; flex-direction: row; justify-content: space-between; align-items: baseline;">
+                  <div>
+                    <span class="reasoning-label">PHYSICS CONFIDENCE</span>
+                    <div style="font-family: var(--font-mono); font-weight: 700; font-size: 13px; color: var(--text-primary); margin-top: 1px;">
+                      87.0 %
+                    </div>
+                  </div>
+                  <div>
+                    <span class="reasoning-label">SEVERITY IMPACT</span>
+                    <div style="font-family: var(--font-mono); font-weight: 700; font-size: 11px; color: var(--amber-primary); margin-top: 1px;">
+                      WATCH &bull; NON-CRITICAL
+                    </div>
+                  </div>
+                </div>
+                <div class="reasoning-row">
+                  <span class="reasoning-label">RECOMMENDED ACTION</span>
+                  <div class="reasoning-content action">
+                    Inspect injector balance during next scheduled maintenance window (recommended within 38 flight hours). No immediate in-flight hazard.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- LOWER LARGE SECTION: Degradation Trend (Left) & Context / Notes / Advisories (Right) -->
+          <div class="overview-bottom-grid">
+            
+            <!-- 8 & 9. DEGRADATION TREND + REMAINING USEFUL LIFE (RUL) -->
+            <div class="eng-panel">
+              <div class="eng-section-header">
+                <div>
+                  <span class="eng-heading">DEGRADATION TREND &amp; REMAINING USEFUL LIFE</span>
+                  <span class="eng-subheading" style="margin-left: 8px;">CONTINUOUS WEAR TIMELINE &bull; KALMAN HEALTH MODEL</span>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);">
+                  TIME SCALE: FLIGHT HOURS
+                </div>
+              </div>
+
+              <!-- RUL Horizon Bar -->
+              <div class="rul-container" style="margin-bottom: var(--space-md); padding: var(--space-sm) var(--space-md);">
+                <div class="rul-header">
+                  <div class="rul-hours-box">
+                    <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase;">
+                      REMAINING USEFUL LIFE:
+                    </span>
+                    <span class="rul-hours-value">428</span>
+                    <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text-secondary);">HOURS</span>
+                  </div>
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="rul-range-pill">EXPECTED: 390 – 470 h</span>
+                    <span class="rul-range-pill" style="color: var(--green-primary); font-weight: 700;">CONFIDENCE: 87%</span>
+                  </div>
+                </div>
+
+                <!-- Horizontal Life Timeline: NEW ─────────●──────── SERVICE LIMIT -->
+                <div class="rul-horizontal-timeline">
+                  <div class="rul-line"></div>
+                  <div class="rul-elapsed"></div>
+                  <div class="rul-current-pin">
+                    <div class="rul-pin-dot"></div>
+                  </div>
+                  <div class="rul-service-limit-pin"></div>
+                </div>
+                <div class="rul-timeline-labels">
+                  <span>FACTORY NEW (0h)</span>
+                  <span style="color: var(--text-primary); font-weight: 700;">CURRENT POSITION (180h)</span>
+                  <span style="color: var(--red-primary); font-weight: 700;">SERVICE LIMIT (608h)</span>
+                </div>
+
+                <div class="rul-statement" style="margin-top: 6px;">
+                  “Current degradation trajectory indicates continued operation within the predicted service window. No accelerated mechanical fatigue detected.”
+                </div>
+              </div>
+
+              <!-- Analytical Continuous Degradation Chart Canvas -->
+              <div class="degradation-chart-wrapper">
+                <canvas id="degradation-trend-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+              </div>
+            </div>
+
+            <!-- 15, 12, 17, 19. SUPPORTING OPERATIONS WORKSPACE (Signal Flow, Mission, Advisory, Notes) -->
+            <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+              
+              <!-- 15. LIVE VS DIGITAL TWIN SIGNAL FLOW -->
+              <div class="eng-panel" style="padding: var(--space-sm) var(--space-md);">
+                <div class="eng-section-header" style="margin-bottom: 8px;">
+                  <span class="eng-heading">PHYSICAL ENGINE &harr; DIGITAL TWIN ARCHITECTURE</span>
+                  <span class="eng-subheading">SYNCHRONIZED</span>
+                </div>
+                <div class="signal-flow-container">
+                  <div class="signal-node">
+                    <div class="node-box">PHYSICAL SENSORS</div>
+                    <span style="font-family: var(--font-mono); font-size: 8px; color: var(--text-tertiary); margin-top: 2px;">CAN / ECU</span>
+                  </div>
+                  <div class="signal-arrow">&rarr;</div>
+                  <div class="signal-node">
+                    <div class="node-box">DATA INGESTION</div>
+                    <span style="font-family: var(--font-mono); font-size: 8px; color: var(--text-tertiary); margin-top: 2px;">18ms LATENCY</span>
+                  </div>
+                  <div class="signal-arrow">&rarr;</div>
+                  <div class="signal-node">
+                    <div class="node-box active-twin">DIGITAL TWIN</div>
+                    <span style="font-family: var(--font-mono); font-size: 8px; color: var(--slate-text); margin-top: 2px;">PHYSICS MODEL</span>
+                  </div>
+                  <div class="signal-arrow">&rarr;</div>
+                  <div class="signal-node">
+                    <div class="node-box">AI PREDICTION</div>
+                    <span style="font-family: var(--font-mono); font-size: 8px; color: var(--text-tertiary); margin-top: 2px;">91% CONF</span>
+                  </div>
+                  <div class="signal-arrow">&rarr;</div>
+                  <div class="signal-node">
+                    <div class="node-box" style="border-color: var(--green-border);">HUMAN DECISION</div>
+                    <span style="font-family: var(--font-mono); font-size: 8px; color: var(--green-text); margin-top: 2px;">OPERATOR</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 12. MISSION CONTEXT & TELEMETRY QUALITY -->
+              <div class="eng-panel">
+                <div class="eng-section-header" style="margin-bottom: 8px;">
+                  <span class="eng-heading">MISSION CONTEXT &amp; TELEMETRY LINK</span>
+                  <span class="eng-subheading">AIRBORNE METADATA</span>
+                </div>
+                <div class="mission-context-grid">
+                  <div class="mission-param">
+                    <span class="mission-lbl">MISSION ID</span>
+                    <span class="mission-val">ENDURANCE ISR-04</span>
+                  </div>
+                  <div class="mission-param">
+                    <span class="mission-lbl">FLIGHT TIME (MET)</span>
+                    <span class="mission-val">04:17:32</span>
+                  </div>
+                  <div class="mission-param">
+                    <span class="mission-lbl">PRESSURE ALTITUDE</span>
+                    <span class="mission-val">18,500 ft</span>
+                  </div>
+                  <div class="mission-param">
+                    <span class="mission-lbl">AMBIENT TEMP (OAT)</span>
+                    <span class="mission-val">31.0 °C</span>
+                  </div>
+                  <div class="mission-param">
+                    <span class="mission-lbl">THROTTLE COMMAND</span>
+                    <span class="mission-val">67.0 %</span>
+                  </div>
+                  <div class="mission-param">
+                    <span class="mission-lbl">ENGINE LOAD</span>
+                    <span class="mission-val">74.0 %</span>
+                  </div>
+                  <div class="mission-param">
+                    <span class="mission-lbl">FUEL REMAINING</span>
+                    <span class="mission-val" style="color: var(--green-primary);">58.0 % (42 L)</span>
+                  </div>
+                  <div class="mission-param">
+                    <span class="mission-lbl">ECU SYNC / REDUNDANCY</span>
+                    <span class="mission-val" style="color: var(--green-primary);">DUAL ACTIVE</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 17 & 19. MAINTENANCE ADVISORY & ENGINEER NOTEBOOK -->
+              <div class="eng-panel">
+                <div class="eng-section-header" style="margin-bottom: 8px;">
+                  <span class="eng-heading">MAINTENANCE ADVISORIES</span>
+                  <span class="eng-subheading">GROUND CREW ACTION</span>
+                </div>
+                
+                <div class="advisory-card" data-open-fault="injector" style="cursor: pointer;" title="Click to open Forensic Drilldown">
+                  <div class="advisory-top">
+                    <span class="advisory-title">INSPECT &bull; INJECTOR BALANCE</span>
+                    <span style="color: var(--text-tertiary);">PRIORITY: LOW &bull; IN 38 FLT HRS</span>
+                  </div>
+                  <div class="advisory-reason">
+                    Reason: Increasing EGT deviation on Cylinder 3 (+28.7°C) under stable cruising load. Click to inspect root-cause analysis.
+                  </div>
+                </div>
+
+                <div class="advisory-card priority-medium" data-open-fault="vibration" style="cursor: pointer;" title="Click to open Forensic Drilldown">
+                  <div class="advisory-top">
+                    <span class="advisory-title" style="color: var(--amber-primary);">MONITOR &bull; CYLINDER VIBRATION TREND</span>
+                    <span style="color: var(--amber-primary); font-weight: 700;">PRIORITY: MEDIUM &bull; IN 12 FLT HRS</span>
+                  </div>
+                  <div class="advisory-reason">
+                    Reason: 2.54x gearbox harmonic signature observed at 0.84 g. Check mount isolator torque. Click to inspect forensics.
+                  </div>
+                </div>
+
+                <!-- 19. Engineer Notes -->
+                <div class="engineer-notes-box">
+                  <p class="notes-text">
+                    “Minor vibration increase observed during previous endurance segment. Continue trending before physical intervention. Injector flow test scheduled at next scheduled base turnaround.”
+                  </p>
+                  <div class="notes-author">
+                    &mdash; PROPULSION ENGINEERING TEAM (FLT-LT H. VANCE / C. REED)
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ==================================================================
+             VIEW 2: LIVE TELEMETRY (Deep-Dive Matrix)
+             ================================================================== -->
+        <section class="view-panel" id="view-telemetry">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">HIGH-DENSITY SENSOR TELEMETRY</h1>
+              <span class="eng-subheading">CAN-BUS A &amp; B REDUNDANT HIGH-SPEED ACQUISITION &bull; 100 HZ INTERNAL SAMPLING</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">
+              CHANNEL HEALTH: <strong>32 / 32 OK</strong> &bull; ZERO PARITY FAULTS
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md);">
+            <!-- Cylinder Head Temps -->
+            <div class="eng-panel">
+              <span class="eng-heading">CYLINDER HEAD TEMPERATURES (CHT)</span>
+              <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); font-size: 12px;">
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>CYL 01 (FWD PORT):</span> <strong>167.4 °C</strong> <span class="status-tag nominal">OK</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>CYL 02 (FWD STBD):</span> <strong>166.8 °C</strong> <span class="status-tag nominal">OK</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>CYL 03 (AFT PORT):</span> <strong>169.5 °C</strong> <span class="status-tag nominal">OK</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>CYL 04 (AFT STBD):</span> <strong>168.1 °C</strong> <span class="status-tag nominal">OK</span>
+                </div>
+              </div>
+              <div style="margin-top: 10px; font-size: 11px; color: var(--text-secondary);">
+                Thermal Headroom to Redline (200°C): <strong>+30.5°C</strong>
+              </div>
+            </div>
+
+            <!-- Exhaust Gas Temps -->
+            <div class="eng-panel">
+              <span class="eng-heading">EXHAUST GAS TEMPERATURES (EGT)</span>
+              <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); font-size: 12px;">
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>CYL 01 RUNNER:</span> <strong>610.2 °C</strong> <span class="status-tag nominal">OK</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>CYL 02 RUNNER:</span> <strong>608.4 °C</strong> <span class="status-tag nominal">OK</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--amber-bg); border: 1px solid var(--amber-border);">
+                  <span style="color: var(--amber-text); font-weight: 700;">CYL 03 RUNNER:</span> <strong style="color: var(--amber-text);">641.5 °C</strong> <span class="status-tag watch">WATCH</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>CYL 04 RUNNER:</span> <strong>611.8 °C</strong> <span class="status-tag nominal">OK</span>
+                </div>
+              </div>
+              <div style="margin-top: 10px; font-size: 11px; color: var(--amber-text);">
+                Peak EGT Spread: <strong>33.1°C</strong> (Tolerance envelope: 40.0°C)
+              </div>
+            </div>
+
+            <!-- Lubrication & Pressures -->
+            <div class="eng-panel">
+              <span class="eng-heading">PRESSURE &amp; DYNAMICS</span>
+              <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); font-size: 12px;">
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>OIL GALLERY PRESSURE:</span> <strong>4.82 bar</strong> <span class="status-tag nominal">OK</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>OIL SUMP TEMP:</span> <strong>94.2 °C</strong> <span class="status-tag nominal">OK</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>FUEL RAIL PRESSURE:</span> <strong>3.18 bar</strong> <span class="status-tag nominal">OK</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: var(--bg-surface-subtle);">
+                  <span>MANIFOLD ABS (MAP):</span> <strong>38.4 inHg</strong> <span class="status-tag nominal">BOOST</span>
+                </div>
+              </div>
+              <div style="margin-top: 10px; font-size: 11px; color: var(--text-secondary);">
+                Oil Delta-P across filter: <strong>0.18 bar</strong> (Clean)
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 3: ENGINE HEALTH MODEL (Subsystems & Physics Breakdown)
+             ================================================================== -->
+        <section class="view-panel" id="view-health">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">ENGINE SUBSYSTEM HEALTH MODEL</h1>
+              <span class="eng-subheading">PHYSICS-BASED STATE ESTIMATION &bull; KALMAN FILTER RESIDUAL TRACKING</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px;">
+              AGGREGATE HEALTH: <strong style="color: var(--green-primary);">98.2 / 100</strong>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+            <div class="eng-panel">
+              <span class="eng-heading">PROPULSION SUBSYSTEM DEGRADATION INDEX</span>
+              <div class="subsystems-list" style="margin-top: var(--space-md); gap: 12px;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; margin-bottom: 4px;">
+                    <strong>COMBUSTION SUBSYSTEM</strong>
+                    <span>94.0% &bull; STABLE</span>
+                  </div>
+                  <div class="subsystem-track" style="height: 8px;"><div class="subsystem-fill fill-nominal" style="width: 94%;"></div></div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; margin-bottom: 4px;">
+                    <strong>LUBRICATION SUBSYSTEM</strong>
+                    <span>98.0% &bull; STABLE</span>
+                  </div>
+                  <div class="subsystem-track" style="height: 8px;"><div class="subsystem-fill fill-nominal" style="width: 98%;"></div></div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; margin-bottom: 4px;">
+                    <strong style="color: var(--amber-primary);">THERMAL &amp; COOLING SUBSYSTEM</strong>
+                    <span style="color: var(--amber-primary); font-weight: 700;">91.0% &bull; WATCH</span>
+                  </div>
+                  <div class="subsystem-track" style="height: 8px;"><div class="subsystem-fill fill-watch" style="width: 91%;"></div></div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; margin-bottom: 4px;">
+                    <strong>FUEL DELIVERY &amp; INJECTION</strong>
+                    <span>93.0% &bull; STABLE</span>
+                  </div>
+                  <div class="subsystem-track" style="height: 8px;"><div class="subsystem-fill fill-nominal" style="width: 93%;"></div></div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; margin-bottom: 4px;">
+                    <strong style="color: var(--amber-primary);">VIBRATION &amp; GEAR TRAIN</strong>
+                    <span style="color: var(--amber-primary); font-weight: 700;">86.0% &bull; INCREASING</span>
+                  </div>
+                  <div class="subsystem-track" style="height: 8px;"><div class="subsystem-fill fill-watch" style="width: 86%;"></div></div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; margin-bottom: 4px;">
+                    <strong>ELECTRICAL &amp; ALTERNATOR BUS</strong>
+                    <span>99.0% &bull; STABLE</span>
+                  </div>
+                  <div class="subsystem-track" style="height: 8px;"><div class="subsystem-fill fill-nominal" style="width: 99%;"></div></div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; margin-bottom: 4px;">
+                    <strong>INSTRUMENTATION &amp; SENSORS</strong>
+                    <span>99.4% &bull; STABLE</span>
+                  </div>
+                  <div class="subsystem-track" style="height: 8px;"><div class="subsystem-fill fill-nominal" style="width: 99.4%;"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="eng-panel">
+              <span class="eng-heading">SUBSYSTEM INTERACTION &amp; THERMODYNAMICS</span>
+              <div style="margin-top: var(--space-md); font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                <p style="margin-bottom: 12px;">
+                  The digital twin model fuses physical thermodynamic conservation equations (first law energy balance, Otto cycle air-standard efficiency) with high-rate CAN telemetry to isolate component wear from atmospheric variance.
+                </p>
+                <div style="padding: 10px; background: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 3px; font-family: var(--font-mono); font-size: 11px; margin-bottom: 12px;">
+                  <div>&bull; KALMAN RESIDUAL: <strong>0.042 (NOMINAL &lt; 0.150)</strong></div>
+                  <div>&bull; ATMOSPHERIC CORRECTION: <strong>ISA + 16.0°C APPLIED</strong></div>
+                  <div>&bull; SENSOR CROSS-ENTROPY: <strong>0.008 (REDUNDANCY PASS)</strong></div>
+                </div>
+                <p>
+                  Thermal divergence in Cylinder 3 is currently decoupled from cylinder head metal temperature, confirming that the cooling jacket continues to transfer heat adequately.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 4: PREDICTIONS & REMAINING USEFUL LIFE (RUL)
+             ================================================================== -->
+        <section class="view-panel" id="view-predictions">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">PREDICTIVE ANALYTICS &amp; WEAR TRAJECTORY</h1>
+              <span class="eng-subheading">PROBABILISTIC REMAINING USEFUL LIFE FORECASTING (WEIBULL-EXPONENTIAL DEGRADATION)</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px;">
+              SERVICE WINDOW: <strong>390 – 470 HOURS</strong>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.3fr 0.7fr; gap: var(--space-lg);">
+            <div class="eng-panel">
+              <span class="eng-heading">WEAR TRAJECTORY &amp; FORECAST ENVELOPE</span>
+              <div class="degradation-chart-wrapper" style="height: 280px; margin-top: 12px;">
+                <canvas id="predictions-degradation-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+              </div>
+            </div>
+
+            <div class="eng-panel">
+              <span class="eng-heading">FAILURE MODE PROBABILITY MATRIX</span>
+              <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px; font-family: var(--font-mono); font-size: 12px;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>INJECTOR NOZZLE COKING</span>
+                    <strong style="color: var(--amber-primary);">14.2 %</strong>
+                  </div>
+                  <div class="subsystem-track"><div class="subsystem-fill fill-watch" style="width: 14.2%;"></div></div>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>GEARBOX BEARING FATIGUE</span>
+                    <strong style="color: var(--amber-primary);">8.6 %</strong>
+                  </div>
+                  <div class="subsystem-track"><div class="subsystem-fill fill-watch" style="width: 8.6%;"></div></div>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>EXHAUST VALVE SEAT RECESSION</span>
+                    <span>1.4 %</span>
+                  </div>
+                  <div class="subsystem-track"><div class="subsystem-fill fill-nominal" style="width: 1.4%;"></div></div>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>OIL PUMP CAVITATION / WEAR</span>
+                    <span>0.8 %</span>
+                  </div>
+                  <div class="subsystem-track"><div class="subsystem-fill fill-nominal" style="width: 0.8%;"></div></div>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>CRANKSHAFT JOURNAL SCOOP</span>
+                    <span>0.2 %</span>
+                  </div>
+                  <div class="subsystem-track"><div class="subsystem-fill fill-nominal" style="width: 0.2%;"></div></div>
+                </div>
+              </div>
+
+              <div style="margin-top: var(--space-lg); padding: 10px; background: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                <strong>Engineering Insight:</strong> Wear indices remain well below critical threshold (85.0%). The projected mean time to intervention (428h) aligns with scheduled depot overhaul at 600h total time.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 5: MISSION REPLAY (Extensive Scrubber & Multi-Trace Analyzer)
+             ================================================================== -->
+        <section class="view-panel" id="view-replay">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">MISSION TELEMETRY REPLAY &amp; POST-FLIGHT FORENSICS</h1>
+              <span class="eng-subheading">SYNCHRONIZED MULTI-CHANNEL RECORDER &bull; MISSION ISR-04 ARCHIVE</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 12px; font-weight: 700;" id="replay-time-readout">
+              01:24:32 / 04:17:32
+            </div>
+          </div>
+
+          <div class="replay-scrubber-box">
+            <!-- Controls Bar -->
+            <div class="replay-controls-bar">
+              <div class="replay-buttons">
+                <button class="eng-btn" id="replay-btn-reset">RESET</button>
+                <button class="eng-btn" id="replay-btn-step-back">&larr; 10s</button>
+                <button class="eng-btn active" id="replay-btn-play">PLAY</button>
+                <button class="eng-btn" id="replay-btn-pause">PAUSE</button>
+                <button class="eng-btn" id="replay-btn-step-fwd">10s &rarr;</button>
+              </div>
+
+              <!-- Speed selector & Dataset dropdown -->
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="display: flex; gap: 4px; align-items: center;">
+                  <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); margin-right: 4px;">PLAYBACK SPEED:</span>
+                  <button class="eng-btn replay-speed-btn active" data-speed="1">1X</button>
+                  <button class="eng-btn replay-speed-btn" data-speed="2">2X</button>
+                  <button class="eng-btn replay-speed-btn" data-speed="5">5X</button>
+                  <button class="eng-btn replay-speed-btn" data-speed="10">10X</button>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);">M2 DATASET:</span>
+                  <select id="replay-dataset-select" class="fault-select" style="font-size: 11px; padding: 2px 6px;">
+                    <option value="m2_output_6.0h.json" selected>M2 SORTIE ISR-04 (6.0h LOITER)</option>
+                    <option value="m2_output_4.5h.json">M2 SORTIE REC-02 (4.5h TRANSIT)</option>
+                    <option value="m2_output_8.0h.json">M2 SORTIE PAT-08 (8.0h PATROL)</option>
+                    <option value="m2_output_10.0h.json">M2 SORTIE END-10 (10.0h ENDURANCE)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Scrubber Slider -->
+            <input type="range" min="0" max="100" step="0.01" value="32.8" class="replay-slider" id="replay-scrubber-slider">
+
+            <!-- Flight Markers Bar -->
+            <div class="flight-markers-row">
+              <span class="marker-tag" data-marker="TAKEOFF">TAKEOFF (00:12:52)</span>
+              <span class="marker-tag" data-marker="CLIMB">CLIMB (00:38:37)</span>
+              <span class="marker-tag" data-marker="CRUISE">CRUISE (01:12:06)</span>
+              <span class="marker-tag" data-marker="THROTTLE">THROTTLE (01:19:50)</span>
+              <span class="marker-tag anomaly" data-marker="ANOMALY">&bull; ANOMALY: EGT (01:24:32)</span>
+              <span class="marker-tag" data-marker="DESCENT">DESCENT (03:20:52)</span>
+              <span class="marker-tag" data-marker="LANDING">LANDING (04:02:04)</span>
+            </div>
+
+            <!-- Synchronized Traces Canvas -->
+            <div style="width: 100%; height: 260px; margin-top: var(--space-md); background: var(--bg-chart); border: 1px solid var(--border-subtle); border-radius: var(--radius-xs);">
+              <canvas id="replay-traces-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+            </div>
+
+            <!-- Contextual Anomaly Info Box -->
+            <div id="replay-anomaly-context" style="margin-top: var(--space-md); padding: var(--space-md); background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-xs);">
+              <!-- Populated by mission-replay.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 6: SIMULATION WORKSPACE (Engineering Sandbox)
+             ================================================================== -->
+        <section class="view-panel" id="view-simulation">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">MISSION PROPULSION SIMULATION WORKSPACE</h1>
+              <span class="eng-subheading">THERMODYNAMIC FLIGHT ENVELOPE CONFIGURATOR &amp; RESPONSE PREDICTOR</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">
+              VIRTUAL TWIN TESTBED
+            </div>
+          </div>
+
+          <div class="simulation-layout">
+            <!-- Left Controls Column -->
+            <div class="eng-panel">
+              <span class="eng-heading">ENVIRONMENT &amp; MISSION CONFIGURATION</span>
+              
+              <div style="margin-top: var(--space-md);">
+                <!-- Altitude -->
+                <div class="sim-control-group">
+                  <div class="sim-slider-row">
+                    <span class="sim-lbl">PRESSURE ALTITUDE</span>
+                    <span class="sim-val" id="sim-slider-alt-val">18,500 ft</span>
+                  </div>
+                  <input type="range" min="0" max="28000" step="500" value="18500" class="sim-slider" id="sim-slider-alt">
+                </div>
+
+                <!-- Ambient Temp -->
+                <div class="sim-control-group">
+                  <div class="sim-slider-row">
+                    <span class="sim-lbl">AMBIENT TEMP (OAT)</span>
+                    <span class="sim-val" id="sim-slider-temp-val">31 °C</span>
+                  </div>
+                  <input type="range" min="-40" max="50" step="1" value="31" class="sim-slider" id="sim-slider-temp">
+                </div>
+
+                <!-- Throttle -->
+                <div class="sim-control-group">
+                  <div class="sim-slider-row">
+                    <span class="sim-lbl">THROTTLE PROFILE</span>
+                    <span class="sim-val" id="sim-slider-throttle-val">67 %</span>
+                  </div>
+                  <input type="range" min="0" max="100" step="1" value="67" class="sim-slider" id="sim-slider-throttle">
+                </div>
+
+                <!-- Engine Load -->
+                <div class="sim-control-group">
+                  <div class="sim-slider-row">
+                    <span class="sim-lbl">ENGINE LOAD</span>
+                    <span class="sim-val" id="sim-slider-load-val">74 %</span>
+                  </div>
+                  <input type="range" min="0" max="100" step="1" value="74" class="sim-slider" id="sim-slider-load">
+                </div>
+
+                <!-- Mission Duration -->
+                <div class="sim-control-group">
+                  <div class="sim-slider-row">
+                    <span class="sim-lbl">MISSION DURATION</span>
+                    <span class="sim-val" id="sim-slider-duration-val">6.0 h</span>
+                  </div>
+                  <input type="range" min="1" max="18" step="0.5" value="6" class="sim-slider" id="sim-slider-duration">
+                </div>
+              </div>
+
+              <!-- Scenario Presets -->
+              <span class="eng-heading" style="margin-top: var(--space-sm); display: block;">OPERATIONAL SCENARIO PRESETS</span>
+              <div class="sim-presets-grid">
+                <button class="eng-btn sim-preset-btn" data-preset="high-alt">HIGH ALTITUDE ISR</button>
+                <button class="eng-btn sim-preset-btn" data-preset="endurance">MAX ENDURANCE</button>
+                <button class="eng-btn sim-preset-btn" data-preset="hot-weather">HOT WEATHER</button>
+                <button class="eng-btn sim-preset-btn" data-preset="rapid-trans">THROTTLE TRANSIENT</button>
+              </div>
+            </div>
+
+            <!-- Right Results & Response Chart Column -->
+            <div class="eng-panel" style="display: flex; flex-direction: column;">
+              <span class="eng-heading">SIMULATED THERMODYNAMIC OUTPUT &bull; COMPARISON TO BASELINE</span>
+              
+              <!-- Predicted Output Metrics Grid -->
+              <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: var(--space-md) 0;">
+                <div class="telem-cell" style="min-height: 56px;">
+                  <span class="telem-title">RPM</span>
+                  <strong id="sim-out-rpm" style="font-family: var(--font-mono); font-size: 14px;">2,412 RPM</strong>
+                </div>
+                <div class="telem-cell" style="min-height: 56px;">
+                  <span class="telem-title">EGT</span>
+                  <strong id="sim-out-egt" style="font-family: var(--font-mono); font-size: 14px; color: var(--amber-primary);">634 °C</strong>
+                </div>
+                <div class="telem-cell" style="min-height: 56px;">
+                  <span class="telem-title">CHT</span>
+                  <strong id="sim-out-cht" style="font-family: var(--font-mono); font-size: 14px;">174.2 °C</strong>
+                </div>
+                <div class="telem-cell" style="min-height: 56px;">
+                  <span class="telem-title">OIL TEMP</span>
+                  <strong id="sim-out-oiltemp" style="font-family: var(--font-mono); font-size: 14px;">96.8 °C</strong>
+                </div>
+                <div class="telem-cell" style="min-height: 56px;">
+                  <span class="telem-title">FUEL FLOW</span>
+                  <strong id="sim-out-fuelflow" style="font-family: var(--font-mono); font-size: 14px;">22.4 L/hr</strong>
+                </div>
+                <div class="telem-cell" style="min-height: 56px;">
+                  <span class="telem-title">LOAD</span>
+                  <strong id="sim-out-load" style="font-family: var(--font-mono); font-size: 14px;">76 %</strong>
+                </div>
+              </div>
+
+              <!-- Simulation Canvas -->
+              <div style="flex: 1; min-height: 250px; background: var(--bg-chart); border: 1px solid var(--border-subtle); border-radius: var(--radius-xs);">
+                <canvas id="simulation-chart-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 7: DIAGNOSTICS & FAULT MONITORING (Interactive Matrix)
+             ================================================================== -->
+        <section class="view-panel" id="view-diagnostics">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">FAULT MONITORING &amp; SUBSYSTEM DIAGNOSTICS</h1>
+              <span class="eng-subheading">CLICK ANY FAULT ROW FOR IN-DEPTH FAILURE FORENSICS &amp; ACTIONS</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px;">
+              STATUS: <strong style="color: var(--amber-primary);">2 WATCH &bull; 6 NOMINAL &bull; 0 CRITICAL</strong>
+            </div>
+          </div>
+
+          <div class="eng-panel" style="padding: 0; overflow: hidden;">
+            <div class="eng-table-container">
+              <table class="eng-table">
+                <thead>
+                  <tr>
+                    <th>SUBSYSTEM / FAULT VECTOR</th>
+                    <th>STATUS</th>
+                    <th>TREND</th>
+                    <th>CONFIDENCE</th>
+                    <th>LAST DETECTED</th>
+                    <th>RECOMMENDED ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr data-fault-key="misfire">
+                    <td><strong>Combustion Misfire</strong></td>
+                    <td><span class="status-tag nominal">NOMINAL</span></td>
+                    <td>Stable (0.01 / 1k rev)</td>
+                    <td>99.4%</td>
+                    <td>None in current sortie</td>
+                    <td>Routine spark plug inspection at 100h</td>
+                  </tr>
+                  <tr data-fault-key="injector" style="background-color: var(--amber-bg);">
+                    <td><strong style="color: var(--amber-text);">Fuel Injector (INJ-03)</strong></td>
+                    <td><span class="status-tag watch">WATCH</span></td>
+                    <td>Increasing (+4.2%)</td>
+                    <td>87.0%</td>
+                    <td>14:32:08 UTC</td>
+                    <td style="color: var(--amber-text); font-weight: 600;">Inspect injector balance during next maintenance</td>
+                  </tr>
+                  <tr data-fault-key="lubrication">
+                    <td><strong>Lubrication &amp; Oil Circulation</strong></td>
+                    <td><span class="status-tag nominal">NOMINAL</span></td>
+                    <td>Stable</td>
+                    <td>98.1%</td>
+                    <td>None</td>
+                    <td>Standard oil sample analysis at 50h turnaround</td>
+                  </tr>
+                  <tr data-fault-key="sensor_drift">
+                    <td><strong>Sensor Cross-Validation &amp; Drift</strong></td>
+                    <td><span class="status-tag nominal">NOMINAL</span></td>
+                    <td>Stable</td>
+                    <td>99.2%</td>
+                    <td>None</td>
+                    <td>Recalibrate MAP transducer at quarterly depot check</td>
+                  </tr>
+                  <tr data-fault-key="combustion_stability">
+                    <td><strong>Combustion Stability (COV-IMEP)</strong></td>
+                    <td><span class="status-tag nominal">NOMINAL</span></td>
+                    <td>Stable</td>
+                    <td>94.6%</td>
+                    <td>None</td>
+                    <td>Continue continuous cycle covariance tracking</td>
+                  </tr>
+                  <tr data-fault-key="overheating">
+                    <td><strong>Overheating &amp; Cooling Baffles</strong></td>
+                    <td><span class="status-tag nominal">NOMINAL</span></td>
+                    <td>Stable</td>
+                    <td>96.8%</td>
+                    <td>None</td>
+                    <td>Check cooling duct baffle seals during pre-flight</td>
+                  </tr>
+                  <tr data-fault-key="vibration" style="background-color: var(--amber-bg);">
+                    <td><strong style="color: var(--amber-text);">Vibration &amp; Gear Train</strong></td>
+                    <td><span class="status-tag watch">WATCH</span></td>
+                    <td>Increasing (+0.08g)</td>
+                    <td>82.0%</td>
+                    <td>13:58:14 UTC</td>
+                    <td style="color: var(--amber-text); font-weight: 600;">Inspect mounting / bearing condition</td>
+                  </tr>
+                  <tr data-fault-key="electrical">
+                    <td><strong>Electrical &amp; Alternator Bus</strong></td>
+                    <td><span class="status-tag nominal">NOMINAL</span></td>
+                    <td>Stable</td>
+                    <td>99.5%</td>
+                    <td>None</td>
+                    <td>Verify battery internal resistance at annual service</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: M4 AI/ML DIAGNOSTIC & SHAP EXPLAINABILITY LAB (SIH26054)
+             ================================================================== -->
+        <section class="view-panel" id="view-m4-lab">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">M4 AI/ML LAYER &bull; ANOMALY DETECTION, CLASSIFICATION &amp; SHAP EXPLAINABILITY</h1>
+              <span class="eng-subheading">DRDO PROBLEM STATEMENT PS26054 &bull; ISOLATION FOREST &amp; RANDOM FOREST ENSEMBLE</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px;">
+              MODEL ACCURACY: <strong style="color: var(--green-primary);">94.56 %</strong> &bull; WEIGHTED F1: <strong style="color: var(--green-primary);">0.9333</strong>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: var(--space-lg); margin-bottom: var(--space-lg);">
+            <!-- Left: Model Metrics & Evaluation Report -->
+            <div class="eng-panel">
+              <span class="eng-heading">RANDOM FOREST FAULT CLASSIFIER BENCHMARK (10,746 SAMPLES)</span>
+              
+              <table class="eng-table" style="margin-top: 10px;">
+                <thead>
+                  <tr>
+                    <th>FAULT CLASS</th>
+                    <th>PRECISION</th>
+                    <th>RECALL</th>
+                    <th>F1-SCORE</th>
+                    <th>TEST SAMPLES</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>healthy</strong></td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td>1.000</td>
+                    <td>3,585</td>
+                  </tr>
+                  <tr>
+                    <td><strong>cooling_system_fault</strong></td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td>0.994</td>
+                    <td>0.997</td>
+                    <td>858</td>
+                  </tr>
+                  <tr>
+                    <td><strong>fuel_mixture_drift</strong></td>
+                    <td>0.977</td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td>0.989</td>
+                    <td>989</td>
+                  </tr>
+                  <tr>
+                    <td><strong>oil_pressure_drop</strong></td>
+                    <td>0.996</td>
+                    <td>0.977</td>
+                    <td>0.986</td>
+                    <td>1,120</td>
+                  </tr>
+                  <tr>
+                    <td><strong>misfire_or_injector_fault</strong></td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td>0.953</td>
+                    <td>0.976</td>
+                    <td>723</td>
+                  </tr>
+                  <tr>
+                    <td><strong>vibration_bearing_fault</strong></td>
+                    <td>0.840</td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td>0.913</td>
+                    <td>1,120</td>
+                  </tr>
+                  <tr>
+                    <td><strong>overheating</strong></td>
+                    <td>0.892</td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td>0.943</td>
+                    <td>1,251</td>
+                  </tr>
+                  <tr>
+                    <td><strong>engine_overspeed</strong></td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td style="color: var(--green-primary); font-weight: 700;">1.000</td>
+                    <td>1.000</td>
+                    <td>1,100</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style="margin-top: 12px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; padding: 8px; background: var(--bg-surface-subtle); border-radius: 3px;">
+                <span>MACRO F1: <strong>0.8571</strong></span>
+                <span>WEIGHTED F1: <strong>0.9333</strong></span>
+                <span>ANOMALY RECALL: <strong>99.98%</strong></span>
+                <span>FALSE ALARM: <strong>0.021</strong></span>
+              </div>
+            </div>
+
+            <!-- Right: Real-Time Inference Probabilities & SHAP Importance -->
+            <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+              <!-- Top-k Probability distribution -->
+              <div class="eng-panel">
+                <span class="eng-heading">LIVE RANDOM FOREST CLASS PROBABILITY (TOP-3)</span>
+                <div id="m4-top-probabilities" style="margin-top: 12px;">
+                  <div style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                      <span>MISFIRE OR INJECTOR FAULT</span>
+                      <strong style="color: var(--amber-primary);">88.6%</strong>
+                    </div>
+                    <div class="subsystem-track"><div class="subsystem-fill fill-watch" style="width: 88.6%;"></div></div>
+                  </div>
+                  <div style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                      <span>FUEL MIXTURE DRIFT</span>
+                      <strong>6.8%</strong>
+                    </div>
+                    <div class="subsystem-track"><div class="subsystem-fill fill-nominal" style="width: 20%;"></div></div>
+                  </div>
+                  <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                      <span>HEALTHY BASELINE</span>
+                      <strong>4.6%</strong>
+                    </div>
+                    <div class="subsystem-track"><div class="subsystem-fill fill-nominal" style="width: 14%;"></div></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SHAP Feature Importance -->
+              <div class="eng-panel">
+                <span class="eng-heading">SHAP FEATURE IMPORTANCE (LOCAL EXPLAINER)</span>
+                <div style="margin-top: 10px;">
+                  <div class="shap-bar-item">
+                    <div class="shap-bar-top">
+                      <span>res_egt_ewma (Cylinder 3 EGT)</span>
+                      <strong>+0.342</strong>
+                    </div>
+                    <div class="shap-bar-track"><div class="shap-bar-fill" style="width: 88%;"></div></div>
+                  </div>
+                  <div class="shap-bar-item">
+                    <div class="shap-bar-top">
+                      <span>res_fuel_drift (Fuel Flow Trim)</span>
+                      <strong>+0.228</strong>
+                    </div>
+                    <div class="shap-bar-track"><div class="shap-bar-fill" style="width: 62%;"></div></div>
+                  </div>
+                  <div class="shap-bar-item">
+                    <div class="shap-bar-top">
+                      <span>res_cht_mean_30s (Thermal Headroom)</span>
+                      <strong>+0.185</strong>
+                    </div>
+                    <div class="shap-bar-track"><div class="shap-bar-fill" style="width: 48%;"></div></div>
+                  </div>
+                  <div class="shap-bar-item">
+                    <div class="shap-bar-top">
+                      <span>res_vib_harmonic_2.54x (Gearbox Mesh)</span>
+                      <strong>+0.142</strong>
+                    </div>
+                    <div class="shap-bar-track"><div class="shap-bar-fill" style="width: 36%;"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Official DRDO Natural Language Explanation -->
+          <div class="eng-panel">
+            <span class="eng-heading">DRDO EXPLAINABLE AI OUTPUT (EXPLANATION_TEMPLATES)</span>
+            <div style="margin-top: 8px; padding: 12px; background: var(--bg-surface-subtle); border-left: 3px solid var(--amber-primary); font-size: 13px; line-height: 1.5;">
+              <strong style="color: var(--text-primary);">MODEL INFERENCE REASONING:</strong>
+              <p id="m4-explanation-text" style="margin: 6px 0; color: var(--text-secondary);">
+                Combustion irregularity detected on Cylinder 3. EGT is showing intermittent divergence (+28.7°C) and RPM fluctuates with minor fuel trim delta. Nozzle micro-coking suspected.
+              </p>
+              <div style="margin-top: 8px; font-family: var(--font-mono); font-size: 11.5px; color: var(--green-text);">
+                <strong>RECOMMENDED MAINTENANCE GUIDANCE:</strong> <span id="m4-action-text">Inspect and ultrasonic clean injector nozzles on Cylinder 3 within 38 flight hours. No immediate flight abort required.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 8: MAINTENANCE ADVISORY (Human-Centered Engineering Notebook)
+             ================================================================== -->
+        <section class="view-panel" id="view-maintenance">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">MAINTENANCE ADVISORY &amp; WORK ORDERS</h1>
+              <span class="eng-subheading">HUMAN-CENTERED GROUND CREW DECISION SUPPORT</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px;">
+              OPEN WORK ORDERS: <strong>2 PENDING</strong>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+            <div class="eng-panel">
+              <span class="eng-heading">SCHEDULED INTERVENTIONS</span>
+              
+              <div style="margin-top: var(--space-md); display: flex; flex-direction: column; gap: var(--space-md);">
+                <div class="advisory-card" style="border-left-width: 4px;">
+                  <div class="advisory-top">
+                    <span class="advisory-title">WO-4819 &bull; INJECTOR NOZZLE BALANCE INSPECTION</span>
+                    <span style="font-weight: 700; color: var(--text-tertiary);">PRIORITY: LOW</span>
+                  </div>
+                  <p class="advisory-reason" style="margin: 6px 0;">
+                    Target Subsystem: Cylinder 3 Port Fuel Injector. Action: Perform ultrasonic cleaning and bench flow verification.
+                  </p>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-mono); font-size: 11px; margin-top: 8px;">
+                    <span>WINDOW: <strong>WITHIN 38 FLIGHT HOURS</strong></span>
+                    <span>TECH LEAD: <strong>PROPULSION TEAM</strong></span>
+                  </div>
+                </div>
+
+                <div class="advisory-card priority-medium" style="border-left-width: 4px;">
+                  <div class="advisory-top">
+                    <span class="advisory-title" style="color: var(--amber-primary);">WO-4822 &bull; GEARBOX BEARING &amp; MOUNT TORQUE CHECK</span>
+                    <span style="font-weight: 700; color: var(--amber-primary);">PRIORITY: MEDIUM</span>
+                  </div>
+                  <p class="advisory-reason" style="margin: 6px 0;">
+                    Target Subsystem: Propeller reduction drive &amp; dynafocal engine mount elastomeric bushings. Action: Torque check and backlash measurement.
+                  </p>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-mono); font-size: 11px; margin-top: 8px;">
+                    <span>WINDOW: <strong>WITHIN 12 FLIGHT HOURS</strong></span>
+                    <span>TECH LEAD: <strong>AIRFRAME / PROPULSION</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="eng-panel">
+              <span class="eng-heading">PROPULSION ENGINEER FIELD NOTEBOOK</span>
+              <div class="engineer-notes-box" style="margin-top: var(--space-md);">
+                <p class="notes-text" style="font-size: 13px;">
+                  “Sortie 04 telemetry demonstrates nominal core thermodynamic efficiency. Fuel injection delta on Cylinder 3 remains moderate (+4.2%), and does not warrant sortie abort. We will hold aircraft for 45 minutes upon recovery at GCS Ramp 3 for borescope inspection of Cyl 3 intake valve and injector spray pattern.”
+                </p>
+                <div class="notes-author" style="font-size: 11px;">
+                  &mdash; FLT-LT H. VANCE, SENIOR PROPULSION SPECIALIST &bull; 14:15 UTC
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 9: SERVICE HISTORY (Technician Attribution Log)
+             ================================================================== -->
+        <section class="view-panel" id="view-history">
+          <div class="eng-section-header" style="margin-bottom: var(--space-md);">
+            <div>
+              <h1 class="eng-title">HISTORICAL MAINTENANCE &amp; COMPONENT LOG</h1>
+              <span class="eng-subheading">SERIALIZED PROPULSION AIRWORTHINESS RECORD</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px;">
+              ENGINE SERIAL: <strong>ROTAX-915IS-98214</strong> &bull; TOTAL AIRFRAME TIME: <strong>180.4 HRS</strong>
+            </div>
+          </div>
+
+          <div class="eng-panel" style="padding: 0; overflow: hidden;">
+            <table class="eng-table">
+              <thead>
+                <tr>
+                  <th>DATE</th>
+                  <th>SERVICE ACTION</th>
+                  <th>ENGINE TIME</th>
+                  <th>OUTCOME / OBSERVATIONS</th>
+                  <th>TECHNICIAN</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>18 AUG 2026</strong></td>
+                  <td>50-Hour Engine Oil &amp; Filter Replacement</td>
+                  <td>152.0 hrs</td>
+                  <td>Aeroshell Sport Plus 4 oil changed. Filter element cut &amp; inspected; zero metal particulate found.</td>
+                  <td><strong>J.K. (SGT)</strong></td>
+                  <td><span class="status-tag nominal">COMPLETED</span></td>
+                </tr>
+                <tr>
+                  <td><strong>02 AUG 2026</strong></td>
+                  <td>Dual ECU Sensor Cross-Calibration &amp; Spark Plugs</td>
+                  <td>110.5 hrs</td>
+                  <td>Rotax spark plugs gapped to 0.65mm. MAP and CHT calibration curves verified against master transducer.</td>
+                  <td><strong>M.R. (CPL)</strong></td>
+                  <td><span class="status-tag nominal">COMPLETED</span></td>
+                </tr>
+                <tr>
+                  <td><strong>27 JUL 2026</strong></td>
+                  <td>Reduction Gearbox Vibration &amp; Friction Torque Check</td>
+                  <td>94.2 hrs</td>
+                  <td>Gearbox overload clutch breakaway torque measured at 620 Nm. No abnormal backlash detected.</td>
+                  <td><strong>D.L. (WO)</strong></td>
+                  <td><span class="status-tag nominal">NO ISSUE FOUND</span></td>
+                </tr>
+                <tr>
+                  <td><strong>14 JUL 2026</strong></td>
+                  <td>Fuel Injector Flow Benchmark &amp; Filter Replacement</td>
+                  <td>60.0 hrs</td>
+                  <td>Ultrasonic flush of main delivery nozzles. Baseline flow rate verified within ±1.0% across all 4 cylinders.</td>
+                  <td><strong>H.V. (FLT-LT)</strong></td>
+                  <td><span class="status-tag nominal">COMPLETED</span></td>
+                </tr>
+                <tr>
+                  <td><strong>28 JUN 2026</strong></td>
+                  <td>New Engine Installation &amp; Dyno Ground Run Acceptance</td>
+                  <td>0.0 hrs</td>
+                  <td>Pre-delivery test cell run completed. 141 HP max continuous rated power verified at 5,800 prop RPM.</td>
+                  <td><strong>D.L. (WO)</strong></td>
+                  <td><span class="status-tag nominal">CERTIFIED</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- ==========================================================================
+         BOTTOM INSTRUMENTATION STATUS STRIP
+         ========================================================================== -->
+    <footer class="bottom-status-strip">
+      <div class="status-metrics">
+        <div class="status-metric">
+          <div class="status-dot-ok"></div>
+          <span>CAN-A / CAN-B: <strong>SYNCHRONIZED</strong></span>
+        </div>
+        <div class="status-metric">
+          <span>ECU LINK: <strong>ACTIVE (DUAL-LANE)</strong></span>
+        </div>
+        <div class="status-metric">
+          <span>TELEMETRY PACKETS: <strong id="stat-can-pkts">12,481 / MIN</strong></span>
+        </div>
+        <div class="status-metric">
+          <span>PACKET LOSS: <strong>0.02 %</strong></span>
+        </div>
+        <div class="status-metric">
+          <span>SENSOR SYNC: <strong>99.4 %</strong></span>
+        </div>
+        <div class="status-metric">
+          <span>LATENCY: <strong id="stat-latency">18 ms</strong></span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: var(--space-md);">
+        <span>TWIN STATE: <strong>MATCHED TO PHYSICS</strong></span>
+        <span>SECURITY LEVEL: <strong>DEFENCE MIL-STD-1553B / STANAG 4586</strong></span>
+      </div>
+    </footer>
+
+    <!-- ==========================================================================
+         DIAGNOSTIC FORENSIC DRILLDOWN DRAWER
+         ========================================================================== -->
+    <div class="forensic-drawer-overlay" id="forensic-drawer-overlay">
+      <div class="forensic-drawer" id="forensic-drawer">
+        <div class="drawer-header">
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); text-transform: uppercase;">
+              DIAGNOSTIC FORENSICS &bull; ROOT-CAUSE ANALYSIS
+            </div>
+            <h2 id="drawer-fault-title" style="font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-primary);">
+              Subsystem Diagnostic
+            </h2>
+          </div>
+          <button class="drawer-close-btn" id="drawer-close-btn" title="Close Drawer (Esc)">&times;</button>
+        </div>
+        <div class="drawer-body" id="drawer-fault-body">
+          <!-- Populated by DiagnosticsModule -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         DRDO TAPAS-BH-201 AIRFRAME SPECIFICATIONS MODAL
+         ========================================================================== -->
+    <div class="drdo-modal-overlay" id="tapas-airframe-modal">
+      <div class="drdo-modal-window" style="width: 960px;">
+        <div class="drdo-modal-header">
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); text-transform: uppercase;">
+              DEFENCE RESEARCH &amp; DEVELOPMENT ORGANISATION &bull; ADE PROPULSION CELL
+            </div>
+            <h2 style="font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--text-primary);">
+              TAPAS-BH-201 (Rustom-II) MALE UAV &bull; Platform Airworthiness Profile
+            </h2>
+          </div>
+          <button class="drawer-close-btn" id="btn-close-airframe-modal" title="Close Modal (Esc)">&times;</button>
+        </div>
+        <div class="drdo-modal-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); align-items: start;">
+            <!-- Left: Airframe Image & Overview -->
+            <div>
+              <div style="border: 1px solid var(--border-medium); border-radius: var(--radius-xs); overflow: hidden; background: #E9ECEF; margin-bottom: 12px;">
+                <img src="assets/uav_tapas_drone.jpg" alt="DRDO TAPAS-BH-201 MALE UAV" style="width: 100%; height: 230px; object-fit: cover; display: block;">
+              </div>
+              <div style="font-family: var(--font-editorial); font-size: 12.5px; line-height: 1.55; color: var(--text-secondary);">
+                The <strong>Tactical Airborne Platform for Aerial Surveillance-Beyond Horizon-201 (TAPAS-BH-201)</strong>, developed by DRDO Aeronautical Development Establishment (ADE), Bengaluru, is an indigenous Medium-Altitude Long-Endurance (MALE) Unmanned Aerial Vehicle engineered for ISTAR (Intelligence, Surveillance, Target Acquisition &amp; Reconnaissance) operations across Indian Armed Forces.
+              </div>
+              <div style="margin-top: 10px; padding: 8px 12px; background: var(--bg-surface-subtle); border-left: 3px solid var(--accent-primary); font-family: var(--font-mono); font-size: 11px;">
+                <strong>TEST FLIGHT LOCATION:</strong> Aeronautical Test Range (ATR), Chitradurga, Karnataka<br>
+                <strong>GROUND CONTROL:</strong> GCS-Alpha / Direct Line-of-Sight C-Band &bull; SATCOM
+              </div>
+            </div>
+
+            <!-- Right: Technical Specifications -->
+            <div>
+              <span class="eng-heading" style="margin-bottom: 8px; display: block;">AIRFRAME &amp; PERFORMANCE SPECIFICATIONS</span>
+              <table class="report-table" style="font-size: 11px;">
+                <tbody>
+                  <tr>
+                    <td style="width: 45%; font-weight: 700; background: var(--bg-surface-subtle);">WINGSPAN</td>
+                    <td><strong>20.6 m</strong> (67.6 ft)</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">LENGTH / HEIGHT</td>
+                    <td><strong>9.5 m</strong> / 2.4 m</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">MAX TAKE-OFF WEIGHT</td>
+                    <td><strong>1,800 kg</strong> (3,968 lb)</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">MISSION PAYLOAD</td>
+                    <td><strong>350 kg</strong> (EO/IR, Synthetic Aperture Radar, EW)</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">OPERATIONAL CEILING</td>
+                    <td><strong>20,600 ft ASL</strong> (Tested 18,500 ft cruise)</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">MISSION ENDURANCE</td>
+                    <td><strong>18+ Hours</strong> continuous loiter</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">PROPULSION CONFIGURATION</td>
+                    <td><strong>Twin Wing-Mounted Tractor Nacelles</strong></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">ENGINE UNITS</td>
+                    <td><strong>2&times; Rotax 914 / 915iS</strong> Turbocharged Piston Engines</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">HORSEPOWER RATING</td>
+                    <td><strong>115 – 141 HP</strong> per unit @ 5,800 prop RPM</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; background: var(--bg-surface-subtle);">DIGITAL TWIN PROTOCOL</td>
+                    <td><strong>MIL-STD-1553B &bull; STANAG 4586 &bull; CAN-Aerospace</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+                <button class="eng-btn" onclick="document.getElementById('tapas-airframe-modal').classList.remove('open')">CLOSE SPECIFICATIONS</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/charts.js"></script>
+  <script src="js/engine-visual.js"></script>
+  <script src="js/telemetry-engine.js"></script>
+  <script src="js/mission-replay.js"></script>
+  <script src="js/simulation.js"></script>
+  <script src="js/diagnostics.js"></script>
+  <script src="js/report-generator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

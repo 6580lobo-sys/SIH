@@ -1,0 +1,1168 @@
+/* ==========================================================================
+   AEROSPACE ENGINEERING COMPONENT STYLING
+   ========================================================================== */
+
+/* Typography Helpers */
+.eng-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.eng-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.eng-heading {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.eng-subheading {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+/* Master Grid Systems for Asymmetric Editorial View */
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  grid-gap: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.overview-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  grid-gap: var(--space-xl);
+  margin-top: var(--space-lg);
+}
+
+/* Engineering Panels */
+.eng-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-subtle);
+  padding: var(--space-md);
+  position: relative;
+}
+
+.eng-panel-sunken {
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: var(--space-md);
+}
+
+/* ==========================================================================
+   DOMINANT HEALTH STATEMENT (5B)
+   ========================================================================== */
+.health-statement-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.health-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--green-bg);
+  border: 1px solid var(--green-border);
+  color: var(--green-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  width: fit-content;
+  margin-bottom: var(--space-xs);
+}
+
+.health-status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--green-dot);
+}
+
+.health-score-huge {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin: var(--space-xs) 0;
+}
+
+.health-score-huge span {
+  font-size: var(--text-xl);
+  font-weight: 400;
+  color: var(--text-tertiary);
+  margin-left: 2px;
+}
+
+.health-primary-text {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-bottom: var(--space-xs);
+}
+
+.health-secondary-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-md);
+}
+
+.health-tri-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tri-metric-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.tri-metric-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tri-metric-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   LIVE TELEMETRY MATRIX (6)
+   ========================================================================== */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+}
+
+.telem-cell {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 8px 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 84px;
+}
+
+.telem-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.telem-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.telem-trend {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+
+.telem-trend.watch {
+  color: var(--amber-primary);
+  font-weight: 700;
+}
+
+.telem-body {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 3px 0 1px 0;
+}
+
+.telem-val {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.telem-unit {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.telem-delta {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  margin-left: auto;
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+}
+
+.delta-stable {
+  color: var(--text-tertiary);
+  background-color: var(--bg-surface-subtle);
+}
+
+.delta-up {
+  color: var(--amber-primary);
+  background-color: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+}
+
+.sparkline-canvas {
+  width: 100%;
+  height: 24px;
+  display: block;
+}
+
+/* ==========================================================================
+   ENGINE HEALTH MODEL SUBSYSTEMS (7)
+   ========================================================================== */
+.subsystems-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.subsystem-item {
+  display: grid;
+  grid-template-columns: 120px 48px 1fr 70px;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 6px 8px;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.subsystem-item:hover,
+.subsystem-item.selected {
+  border-color: var(--text-secondary);
+  background-color: var(--bg-surface);
+}
+
+.subsystem-name {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.subsystem-pct {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.subsystem-track {
+  width: 100%;
+  height: 6px;
+  background-color: var(--border-subtle);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+
+.subsystem-fill {
+  height: 100%;
+  border-radius: var(--radius-xs);
+}
+
+.fill-nominal {
+  background-color: var(--green-primary);
+}
+
+.fill-watch {
+  background-color: var(--amber-primary);
+}
+
+.fill-critical {
+  background-color: var(--red-primary);
+}
+
+.subsystem-status-tag {
+  font-size: 10px;
+  text-align: center;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.tag-nominal {
+  color: var(--green-text);
+  background-color: var(--green-bg);
+  border: 1px solid var(--green-border);
+}
+
+.tag-watch {
+  color: var(--amber-text);
+  background-color: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+}
+
+/* ==========================================================================
+   DEGRADATION TREND & RUL (8 & 9)
+   ========================================================================== */
+.rul-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.rul-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.rul-hours-box {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.rul-hours-value {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.rul-range-pill {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-secondary);
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.rul-horizontal-timeline {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  margin: var(--space-xs) 0;
+}
+
+.rul-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--border-medium);
+}
+
+.rul-elapsed {
+  position: absolute;
+  left: 0;
+  width: 58%;
+  height: 3px;
+  background-color: var(--slate-primary);
+}
+
+.rul-current-pin {
+  position: absolute;
+  left: 58%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rul-pin-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--green-primary);
+  border: 2px solid var(--bg-surface);
+  box-shadow: 0 0 0 1px var(--green-border);
+}
+
+.rul-service-limit-pin {
+  position: absolute;
+  right: 0;
+  height: 14px;
+  width: 2px;
+  background-color: var(--red-primary);
+}
+
+.rul-timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.rul-statement {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  border-left: 2px solid var(--slate-border);
+  padding-left: var(--space-xs);
+}
+
+.degradation-chart-wrapper {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background-color: var(--bg-chart);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+}
+
+/* ==========================================================================
+   PREDICTIVE DIAGNOSTICS (10) - HUMANIZED AI ASSISTANT
+   ========================================================================== */
+.ai-diagnostics-box {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.ai-scores-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ai-score-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-score-card .lbl {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.ai-score-card .val {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.diagnostic-reasoning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.reasoning-row {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.reasoning-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  letter-spacing: 0.05em;
+}
+
+.reasoning-content {
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.reasoning-content.action {
+  color: var(--green-text);
+  background-color: var(--green-bg);
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--green-border);
+}
+
+/* ==========================================================================
+   FAULT MONITORING TABLE (11)
+   ========================================================================== */
+.eng-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.eng-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.eng-table th {
+  text-align: left;
+  padding: 8px 10px;
+  background-color: var(--bg-surface-subtle);
+  border-bottom: 1px solid var(--border-medium);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.eng-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.eng-table tr:hover td {
+  background-color: var(--bg-surface-subtle);
+  cursor: pointer;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-tag.nominal {
+  background-color: var(--green-bg);
+  color: var(--green-text);
+  border: 1px solid var(--green-border);
+}
+
+.status-tag.watch {
+  background-color: var(--amber-bg);
+  color: var(--amber-text);
+  border: 1px solid var(--amber-border);
+}
+
+.status-tag.critical {
+  background-color: var(--red-bg);
+  color: var(--red-text);
+  border: 1px solid var(--red-border);
+}
+
+/* ==========================================================================
+   MISSION CONTEXT (12) & DATA STATUS (16)
+   ========================================================================== */
+.mission-context-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-xs);
+}
+
+.mission-param {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+}
+
+.mission-lbl {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.mission-val {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ==========================================================================
+   SIGNAL FLOW: PHYSICAL VS DIGITAL TWIN (15)
+   ========================================================================== */
+.signal-flow-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  margin-bottom: var(--space-md);
+}
+
+.signal-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.node-box {
+  padding: 5px 10px;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.node-box.active-twin {
+  background-color: var(--slate-bg);
+  border-color: var(--slate-border);
+  color: var(--slate-text);
+}
+
+.signal-arrow {
+  color: var(--border-strong);
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   MAINTENANCE ADVISORY & ENGINEER NOTES (17, 18, 19)
+   ========================================================================== */
+.advisory-card {
+  padding: var(--space-xs) var(--space-sm);
+  background-color: var(--bg-surface);
+  border-left: 3px solid var(--slate-border);
+  border-top: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  margin-bottom: var(--space-xs);
+}
+
+.advisory-card.priority-medium {
+  border-left-color: var(--amber-primary);
+}
+
+.advisory-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.advisory-title {
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.advisory-reason {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.engineer-notes-box {
+  background-color: #F8F7F0;
+  border: 1px dashed var(--border-medium);
+  border-radius: var(--radius-xs);
+  padding: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.notes-text {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.notes-author {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  text-align: right;
+  margin-top: var(--space-xs);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   MISSION REPLAY TIMELINE (13)
+   ========================================================================== */
+.replay-scrubber-box {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-md);
+}
+
+.replay-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.replay-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.eng-btn {
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.1s ease;
+}
+
+.eng-btn:hover {
+  background-color: var(--border-subtle);
+}
+
+.eng-btn.active {
+  background-color: var(--text-primary);
+  color: var(--text-inverse);
+  border-color: var(--text-primary);
+}
+
+.replay-slider {
+  width: 100%;
+  appearance: none;
+  height: 4px;
+  background: var(--border-medium);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.replay-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 2px solid var(--bg-surface);
+  box-shadow: 0 0 0 1px var(--border-medium);
+  cursor: pointer;
+}
+
+.flight-markers-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-xs);
+  position: relative;
+}
+
+.marker-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-xs);
+}
+
+.marker-tag:hover {
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-primary);
+}
+
+.marker-tag.anomaly {
+  color: var(--amber-primary);
+  font-weight: 700;
+  border: 1px solid var(--amber-border);
+  background-color: var(--amber-bg);
+}
+
+/* ==========================================================================
+   SIMULATION WORKSPACE (14)
+   ========================================================================== */
+.simulation-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: var(--space-xl);
+}
+
+.sim-control-group {
+  margin-bottom: var(--space-md);
+}
+
+.sim-slider-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.sim-slider {
+  width: 100%;
+  appearance: none;
+  height: 4px;
+  background: var(--border-medium);
+  border-radius: 2px;
+  outline: none;
+}
+
+.sim-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--slate-primary);
+  cursor: pointer;
+}
+
+.sim-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+/* ==========================================================================
+   ADVANCED DRDO SIH26054 COMPONENT EXTENSIONS
+   ========================================================================== */
+
+/* Twin Engine Switcher in Header */
+.engine-switcher-group {
+  display: inline-flex;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.engine-switch-btn {
+  background: none;
+  border: none;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.1s ease;
+}
+
+.engine-switch-btn.active {
+  background-color: var(--text-primary);
+  color: var(--text-inverse);
+}
+
+/* M3 Real-Time Fault Injector Bar */
+.fault-injector-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background-color: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.fault-select {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--amber-border);
+  border-radius: var(--radius-xs);
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  max-width: 250px;
+  white-space: nowrap;
+}
+
+#btn-generate-audit-report {
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  padding: 0 10px;
+  letter-spacing: 0.02em;
+}
+
+/* M1 Physics Model Residuals Grid */
+.residuals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-xs);
+}
+
+.residual-cell {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.residual-lbl {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.residual-val {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 2px;
+}
+
+.residual-val.watch {
+  color: var(--amber-primary);
+}
+
+/* M4 Explainability Lab & SHAP Importance Bars */
+.shap-bar-item {
+  margin-bottom: 8px;
+}
+
+.shap-bar-top {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  margin-bottom: 2px;
+}
+
+.shap-bar-track {
+  width: 100%;
+  height: 6px;
+  background-color: var(--border-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.shap-bar-fill {
+  height: 100%;
+  background-color: var(--slate-primary);
+  border-radius: 2px;
+}
+
+/* DRDO Airframe & Report Modals */
+.drdo-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(24, 27, 30, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+}
+
+.drdo-modal-overlay.open {
+  display: flex;
+}
+
+.drdo-modal-window {
+  width: 880px;
+  max-width: 95vw;
+  max-height: 90vh;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.drdo-modal-header {
+  padding: var(--space-sm) var(--space-lg);
+  background-color: var(--bg-surface-subtle);
+  border-bottom: 1px solid var(--border-medium);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drdo-modal-body {
+  padding: var(--space-lg);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Official DRDO Report Printout Styling */
+.drdo-report-container {
+  font-family: var(--font-editorial);
+  color: #111;
+  line-height: 1.4;
+}
+
+.report-drdo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drdo-emblem-badge {
+  padding: 6px 10px;
+  background-color: #222;
+  color: #FFF;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+}
+
+.report-title-main {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.report-subtitle {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #444;
+}
+
+.report-meta-doc {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a4427;
+  margin-top: 2px;
+}
+
+.report-section-block {
+  margin-bottom: 14px;
+}
+
+.report-sec-heading {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #CCC;
+  padding-bottom: 3px;
+  margin-bottom: 8px;
+  color: #222;
+}
+
+.report-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.report-table th {
+  background: #EFEFEA;
+  border: 1px solid #CCC;
+  padding: 5px 8px;
+  text-align: left;
+  font-size: 10px;
+}
+
+.report-table td {
+  border: 1px solid #DDD;
+  padding: 5px 8px;
+}

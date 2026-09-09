@@ -1,0 +1,248 @@
+/* ==========================================================================
+   AERO-PISTON ENGINE TECHNICAL CUTAWAY VISUALIZATION STYLING
+   ========================================================================== */
+
+.engine-viewport-container {
+  position: relative;
+  width: 100%;
+  height: 415px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  flex-direction: column;
+}
+
+.engine-canvas-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px;
+  background-color: var(--bg-surface-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  gap: var(--space-sm);
+  z-index: 5;
+  flex-shrink: 0;
+}
+
+.engine-svg {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: block;
+}
+
+.engine-id-badge {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.engine-mode-toggles {
+  pointer-events: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.engine-mode-btn {
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+}
+
+.engine-mode-btn.active {
+  background-color: var(--text-primary);
+  color: var(--text-inverse);
+  border-color: var(--text-primary);
+}
+
+/* Mechanical SVG styling */
+.engine-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Base Metal Materials */
+.part-housing {
+  fill: #E5E2D8;
+  stroke: #B8B3A4;
+  stroke-width: 1.2;
+}
+
+.part-cylinder {
+  fill: #D8D4C9;
+  stroke: #A8A496;
+  stroke-width: 1;
+  transition: fill 0.2s ease, stroke 0.2s ease;
+}
+
+.part-cylinder-fin {
+  stroke: #BCB7AA;
+  stroke-width: 0.8;
+}
+
+.part-crankshaft {
+  fill: #B0ACA0;
+  stroke: #7D796F;
+  stroke-width: 1.2;
+}
+
+.part-intake {
+  fill: #E0DDD4;
+  stroke: #A29E93;
+  stroke-width: 1;
+}
+
+.part-exhaust {
+  fill: #B5B0A2;
+  stroke: #7B766B;
+  stroke-width: 1;
+}
+
+.part-oil-loop {
+  fill: none;
+  stroke: #4B6E54;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 4 2;
+}
+
+.part-fuel-rail {
+  fill: none;
+  stroke: #8C8472;
+  stroke-width: 1.5;
+}
+
+.part-prop-shaft {
+  fill: #989487;
+  stroke: #5E5B53;
+  stroke-width: 1.2;
+}
+
+/* Interactive Component Hotspots */
+.engine-part-group {
+  cursor: pointer;
+}
+
+.engine-part-group:hover .part-cylinder {
+  fill: #C9C4B7;
+  stroke: #726E63;
+}
+
+/* Health State Accents (Restrained, Not Neon) */
+.state-nominal .part-accent {
+  stroke: var(--green-primary);
+  stroke-width: 1.5;
+}
+
+.state-watch .part-cylinder {
+  fill: #EAE0CB;
+  stroke: var(--amber-primary);
+  stroke-width: 1.5;
+}
+
+.state-watch .part-accent {
+  stroke: var(--amber-primary);
+}
+
+.state-critical .part-cylinder {
+  fill: #E8D3D3;
+  stroke: var(--red-primary);
+  stroke-width: 1.5;
+}
+
+/* Engineering Annotations & Leader Lines */
+.eng-annotation {
+  cursor: pointer;
+}
+
+.leader-line {
+  stroke: var(--border-strong);
+  stroke-width: 0.75;
+  stroke-dasharray: 2 2;
+  fill: none;
+}
+
+.annotation-box {
+  fill: var(--bg-surface);
+  stroke: var(--border-medium);
+  stroke-width: 0.75;
+}
+
+.annotation-text-primary {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  fill: var(--text-primary);
+  letter-spacing: 0.05em;
+}
+
+.annotation-text-secondary {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 500;
+  fill: var(--text-tertiary);
+}
+
+.annotation-tag-watch {
+  fill: var(--amber-text);
+  font-weight: 700;
+}
+
+.eng-annotation:hover .annotation-box {
+  stroke: var(--text-primary);
+  fill: var(--bg-surface-subtle);
+}
+
+/* Dimensional Technical Grid & Crosshairs */
+.tech-crosshair {
+  stroke: var(--border-medium);
+  stroke-width: 0.5;
+  stroke-dasharray: 4 4;
+}
+
+.dimension-tick {
+  stroke: var(--border-strong);
+  stroke-width: 0.75;
+}
+
+/* Bottom Technical Legend inside Engine Viewport */
+.engine-canvas-footer {
+  position: relative;
+  padding: 5px 14px;
+  background-color: var(--bg-surface-subtle);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-tertiary);
+  pointer-events: auto;
+  z-index: 5;
+  flex-shrink: 0;
+}
+
+.engine-specs {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.engine-specs span strong {
+  color: var(--text-secondary);
+}

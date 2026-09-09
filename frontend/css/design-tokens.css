@@ -1,0 +1,144 @@
+/* ==========================================================================
+   AEROSPACE ENGINEERING DESIGN TOKENS
+   Defence-Grade MALE UAV Engine Digital Twin & Health Monitoring Platform
+   Aesthetic: Premium Light Theme, High-Precision Instrumentation, Editorial
+   ========================================================================== */
+
+:root {
+  /* --- Primary Tonal Surfaces (Warm White / Ivory / Soft Grey / Light Stone) --- */
+  --bg-app: #F6F5F0;             /* Master application base: warm technical ivory */
+  --bg-surface: #FFFFFF;         /* Pure crisp technical sheet */
+  --bg-surface-subtle: #F0EFEA;  /* Secondary engineering workspace */
+  --bg-elevated: #E8E6DF;        /* Elevated panels, headers, rail */
+  --bg-sunken: #EDECE6;          /* Inset monitors, chart wells */
+  --bg-chart: #FAF9F5;           /* Dedicated instrument chart canvas */
+  --bg-code: #E5E3DB;            /* Monospace badge wells */
+
+  /* --- Dividers & Engineering Hairline Construction Lines --- */
+  --border-subtle: #E2E0D6;      /* Faint 1px separators */
+  --border-medium: #CDC9BD;      /* Panel bounding lines */
+  --border-strong: #9E9A8E;      /* Active selection borders */
+  --border-hairline: rgba(0, 0, 0, 0.07);
+  --grid-line: rgba(45, 52, 58, 0.035);
+
+  /* --- Typographic Architecture (Charcoal, Muted Steel, Slate) --- */
+  --text-primary: #181B1E;       /* Deep charcoal ink */
+  --text-secondary: #4A5158;     /* Muted engineering steel */
+  --text-tertiary: #727A82;      /* Technical labels & metadata */
+  --text-muted: #959DA4;         /* Inactive/guideline indicators */
+  --text-inverse: #FFFFFF;
+
+  /* --- Controlled Semantic Aerospace Colors --- */
+  /* Restrained Military Green (Nominal, Safe, Operational) */
+  --green-primary: #2B5738;
+  --green-text: #22462D;
+  --green-bg: #EDF4EE;
+  --green-border: #9DC3A7;
+  --green-dot: #347348;
+
+  /* Muted Technical Amber (Watch, Trend Divergence, Caution) */
+  --amber-primary: #946816;
+  --amber-text: #7A530C;
+  --amber-bg: #FBF4E4;
+  --amber-border: #DBC58D;
+  --amber-dot: #B8831F;
+
+  /* Controlled Warning Red (Critical, Envelope Limit Exceeded) */
+  --red-primary: #9E2F2F;
+  --red-text: #822222;
+  --red-bg: #FAECEC;
+  --red-border: #E09E9E;
+  --red-dot: #BA3232;
+
+  /* Muted Aerospace Slate / Navy (Digital Twin Virtual Model) */
+  --slate-primary: #3B4D5E;
+  --slate-text: #283745;
+  --slate-bg: #EEF2F6;
+  --slate-border: #A9BCCF;
+
+  /* --- Mechanical Component Shading (Neutral Alloy & Castings) --- */
+  --metal-housing: #E4E2D8;
+  --metal-accent: #C7C3B6;
+  --metal-core: #9C988B;
+  --metal-dark: #58554E;
+  --metal-highlight: #F5F4EE;
+
+  /* --- Typography Families --- */
+  --font-editorial: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* --- Type Scale --- */
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13.5px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 38px;
+  --text-hero: 52px;
+
+  /* --- Geometry & Elevation --- */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 6px;
+
+  /* Very restrained micro-shadows (no floating cards, physical desktop feel) */
+  --shadow-subtle: 0 1px 2px rgba(24, 27, 30, 0.04);
+  --shadow-panel: 0 1px 3px rgba(24, 27, 30, 0.06), 0 0 0 1px var(--border-subtle);
+  --shadow-drawer: -4px 0 16px rgba(24, 27, 30, 0.08);
+
+  /* --- Spacing System --- */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* --- Dimensions --- */
+  --nav-rail-width: 82px;
+  --top-bar-height: 50px;
+  --status-bar-height: 28px;
+}
+
+/* Base resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-editorial);
+  font-size: var(--text-base);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+/* Subtle engineering blueprint / technical document background texture */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
