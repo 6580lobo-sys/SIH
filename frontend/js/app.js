@@ -42,6 +42,8 @@ class AppCoordinator {
     this.bindEngineSwitcher();
     this.bindFaultInjector();
     this.bindAirframeModal();
+    this.bindScenarioManager();
+    this.bindProbeSandbox();
 
     // 7. Bind Subsystem Health Items
     this.bindSubsystems();
@@ -55,6 +57,7 @@ class AppCoordinator {
     // 9. Initial Charts Draw
     setTimeout(() => {
       this.drawAllCharts();
+      this.runProbeEvaluation();
     }, 100);
 
     window.addEventListener('resize', () => {
@@ -271,6 +274,239 @@ class AppCoordinator {
       window.AeroCharts.drawSparkline('sparkline-vib', history.vibration, { min: 0.7, max: 1.6, isWatch: true });
       window.AeroCharts.drawSparkline('sparkline-elec', history.batteryVolt, { min: 27, max: 29 });
       window.AeroCharts.drawSparkline('sparkline-time', history.timing, { min: 23, max: 26 });
+    }
+  }
+
+  bindScenarioManager() {
+    const chips = document.querySelectorAll('.scenario-chip');
+    const faultSelector = document.getElementById('m3-fault-selector');
+
+    const selectScenario = (scenarioKey) => {
+      document.querySelectorAll('.scenario-chip').forEach(c => {
+        if (c.getAttribute('data-scenario') === scenarioKey) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+
+      if (faultSelector) {
+        faultSelector.value = scenarioKey;
+      }
+
+      this.telemetryEngine.injectFault(scenarioKey);
+
+      if (this.engineVisualizer) {
+        this.engineVisualizer.applyFaultHighlight(scenarioKey);
+      }
+      if (this.diagnosticsModule) {
+        this.diagnosticsModule.updateExplainability(scenarioKey);
+      }
+    };
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const key = chip.getAttribute('data-scenario');
+        if (key) selectScenario(key);
+      });
+    });
+
+    if (faultSelector) {
+      faultSelector.addEventListener('change', (e) => {
+        selectScenario(e.target.value);
+      });
+    }
+
+    // Modal bindings for Save Custom Config
+    const openBtn = document.getElementById('btn-open-save-config');
+    const modal = document.getElementById('save-scenario-modal');
+    const closeBtn = document.getElementById('btn-close-save-modal');
+    const cancelBtn = document.getElementById('btn-cancel-save-scenario');
+    const confirmBtn = document.getElementById('btn-confirm-save-scenario');
+
+    if (openBtn && modal) openBtn.addEventListener('click', () => modal.classList.add('open'));
+    if (closeBtn && modal) closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+    if (cancelBtn && modal) cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
+
+    if (confirmBtn && modal) {
+      confirmBtn.addEventListener('click', () => {
+        const nameInput = document.getElementById('input-scenario-name');
+        const faultInput = document.getElementById('input-scenario-fault');
+        const descInput = document.getElementById('input-scenario-desc');
+
+        const name = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Custom Scenario';
+        const fault = faultInput ? faultInput.value : 'healthy';
+
+        const container = document.getElementById('scenario-chips-container');
+        if (container) {
+          const newChip = document.createElement('button');
+          newChip.className = 'scenario-chip fault-active';
+          newChip.setAttribute('data-scenario', fault);
+          newChip.textContent = `★ ${name.toUpperCase()}`;
+          newChip.addEventListener('click', () => selectScenario(fault));
+          container.appendChild(newChip);
+        }
+
+        modal.classList.remove('open');
+        selectScenario(fault);
+        if (nameInput) nameInput.value = '';
+        if (descInput) descInput.value = '';
+      });
+    }
+  }
+
+  bindProbeSandbox() {
+    const sliders = [
+      { id: 'slider-probe-rpm', disp: 'disp-probe-rpm', unit: ' RPM' },
+      { id: 'slider-probe-throttle', disp: 'disp-probe-throttle', unit: ' %' },
+      { id: 'slider-probe-oil-temp', disp: 'disp-probe-oil-temp', unit: ' °C' },
+      { id: 'slider-probe-oil-press', disp: 'disp-probe-oil-press', unit: ' bar' },
+      { id: 'slider-probe-cht', disp: 'disp-probe-cht', unit: ' °C' },
+      { id: 'slider-probe-egt', disp: 'disp-probe-egt', unit: ' °C' },
+      { id: 'slider-probe-fuel', disp: 'disp-probe-fuel', unit: ' L/h' },
+      { id: 'slider-probe-vib', disp: 'disp-probe-vib', unit: ' g' },
+      { id: 'slider-probe-duration', disp: 'disp-probe-duration', unit: ' h' },
+    ];
+
+    sliders.forEach(s => {
+      const el = document.getElementById(s.id);
+      const disp = document.getElementById(s.disp);
+      if (el && disp) {
+        el.addEventListener('input', () => {
+          disp.textContent = `${el.value}${s.unit}`;
+        });
+      }
+    });
+
+    const setSliders = (vals) => {
+      if (vals.rpm !== undefined) {
+        const el = document.getElementById('slider-probe-rpm');
+        if (el) { el.value = vals.rpm; document.getElementById('disp-probe-rpm').textContent = `${vals.rpm} RPM`; }
+      }
+      if (vals.throttle !== undefined) {
+        const el = document.getElementById('slider-probe-throttle');
+        if (el) { el.value = vals.throttle; document.getElementById('disp-probe-throttle').textContent = `${vals.throttle} %`; }
+      }
+      if (vals.oilTemp !== undefined) {
+        const el = document.getElementById('slider-probe-oil-temp');
+        if (el) { el.value = vals.oilTemp; document.getElementById('disp-probe-oil-temp').textContent = `${vals.oilTemp} °C`; }
+      }
+      if (vals.oilPress !== undefined) {
+        const el = document.getElementById('slider-probe-oil-press');
+        if (el) { el.value = vals.oilPress; document.getElementById('disp-probe-oil-press').textContent = `${vals.oilPress} bar`; }
+      }
+      if (vals.cht !== undefined) {
+        const el = document.getElementById('slider-probe-cht');
+        if (el) { el.value = vals.cht; document.getElementById('disp-probe-cht').textContent = `${vals.cht} °C`; }
+      }
+      if (vals.egt !== undefined) {
+        const el = document.getElementById('slider-probe-egt');
+        if (el) { el.value = vals.egt; document.getElementById('disp-probe-egt').textContent = `${vals.egt} °C`; }
+      }
+      if (vals.fuel !== undefined) {
+        const el = document.getElementById('slider-probe-fuel');
+        if (el) { el.value = vals.fuel; document.getElementById('disp-probe-fuel').textContent = `${vals.fuel} L/h`; }
+      }
+      if (vals.vib !== undefined) {
+        const el = document.getElementById('slider-probe-vib');
+        if (el) { el.value = vals.vib; document.getElementById('disp-probe-vib').textContent = `${vals.vib} g`; }
+      }
+      this.runProbeEvaluation();
+    };
+
+    const btnNom = document.getElementById('btn-probe-quick-nominal');
+    if (btnNom) btnNom.addEventListener('click', () => setSliders({ rpm: 2438, throttle: 65, oilTemp: 94.2, oilPress: 4.82, cht: 167.4, egt: 612.8, fuel: 21.7, vib: 0.84 }));
+
+    const btnOil = document.getElementById('btn-probe-quick-oil');
+    if (btnOil) btnOil.addEventListener('click', () => setSliders({ oilPress: 1.35, oilTemp: 116.0 }));
+
+    const btnCht = document.getElementById('btn-probe-quick-cht');
+    if (btnCht) btnCht.addEventListener('click', () => setSliders({ cht: 236.0, egt: 760.0 }));
+
+    const btnEgt = document.getElementById('btn-probe-quick-egt');
+    if (btnEgt) btnEgt.addEventListener('click', () => setSliders({ egt: 865.0, fuel: 28.5 }));
+
+    const btnVib = document.getElementById('btn-probe-quick-vib');
+    if (btnVib) btnVib.addEventListener('click', () => setSliders({ vib: 3.85 }));
+
+    const evalBtn = document.getElementById('btn-evaluate-live-probe');
+    if (evalBtn) {
+      evalBtn.addEventListener('click', () => this.runProbeEvaluation());
+    }
+  }
+
+  runProbeEvaluation() {
+    const getVal = (id, def) => {
+      const el = document.getElementById(id);
+      return el ? Number(el.value) : def;
+    };
+
+    const probe = {
+      rpm: getVal('slider-probe-rpm', 2438),
+      throttle: getVal('slider-probe-throttle', 65),
+      oilTemp: getVal('slider-probe-oil-temp', 94.2),
+      oilPress: getVal('slider-probe-oil-press', 4.82),
+      cht: getVal('slider-probe-cht', 167.4),
+      egt: getVal('slider-probe-egt', 612.8),
+      fuelFlow: getVal('slider-probe-fuel', 21.7),
+      vibration: getVal('slider-probe-vib', 0.84),
+      missionDurationHours: getVal('slider-probe-duration', 8.0),
+    };
+
+    const res = this.telemetryEngine.evaluateLiveProbe(probe);
+
+    const verdictEl = document.getElementById('probe-out-verdict');
+    if (verdictEl) {
+      verdictEl.textContent = res.ml.isAnomaly ? 'ANOMALOUS (FAULT DETECTED)' : 'NOMINAL (HEALTHY)';
+      verdictEl.className = `outcome-badge ${res.ml.isAnomaly ? (res.severity === 'CRITICAL_RTB' ? 'critical' : 'warning') : 'normal'}`;
+    }
+
+    const scoreEl = document.getElementById('probe-out-anomaly-score');
+    if (scoreEl) scoreEl.textContent = res.ml.anomalyScore.toFixed(4);
+
+    const classEl = document.getElementById('probe-out-class');
+    if (classEl) {
+      classEl.textContent = res.ml.predictedClass.replace(/_/g, ' ').toUpperCase();
+      classEl.style.color = res.ml.isAnomaly ? 'var(--amber-primary)' : 'var(--green-primary)';
+    }
+
+    const confEl = document.getElementById('probe-out-conf');
+    if (confEl) confEl.textContent = `${(res.ml.confidence * 100).toFixed(1)}%`;
+
+    const featEl = document.getElementById('probe-out-top-features');
+    if (featEl) featEl.textContent = res.ml.topFeatures.join(', ');
+
+    const resEl = document.getElementById('probe-out-residuals');
+    if (resEl) {
+      resEl.textContent = `ΔCHT: ${res.residuals.resCht > 0 ? '+' : ''}${res.residuals.resCht}°C | ΔOilP: ${res.residuals.resOilP > 0 ? '+' : ''}${res.residuals.resOilP} bar | ΔEGT: ${res.residuals.resEgt > 0 ? '+' : ''}${res.residuals.resEgt}°C`;
+    }
+
+    const hiEl = document.getElementById('probe-out-hi');
+    if (hiEl) {
+      hiEl.textContent = `${res.healthIndex.toFixed(1)} %`;
+      hiEl.style.color = res.healthIndex > 80 ? 'var(--green-primary)' : (res.healthIndex > 50 ? 'var(--amber-primary)' : 'var(--red-primary)');
+    }
+
+    const sevEl = document.getElementById('probe-out-severity');
+    if (sevEl) {
+      sevEl.textContent = res.severity;
+      sevEl.className = `outcome-badge ${res.severity === 'NORMAL' ? 'normal' : (res.severity === 'CRITICAL_RTB' ? 'critical' : 'warning')}`;
+    }
+
+    const rulEl = document.getElementById('probe-out-rul');
+    if (rulEl) {
+      rulEl.textContent = `${res.rul.est.toFixed(1)} min (${(res.rul.est / 60).toFixed(1)} h)`;
+    }
+
+    const ciEl = document.getElementById('probe-out-ci');
+    if (ciEl) {
+      ciEl.textContent = `[${res.rul.lower.toFixed(1)} min — ${res.rul.upper.toFixed(1)} min] (95% CI)`;
+    }
+
+    const timeEl = document.getElementById('probe-run-timestamp');
+    if (timeEl) {
+      const now = new Date();
+      timeEl.textContent = `Evaluated at ${now.toLocaleTimeString()} UTC · Verification: Model reliably classified ${res.ml.predictedClass.replace(/_/g, ' ').toUpperCase()} (${(res.ml.confidence*100).toFixed(1)}%).`;
     }
   }
 }

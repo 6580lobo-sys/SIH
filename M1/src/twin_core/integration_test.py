@@ -61,7 +61,7 @@ def validate_schema(data: dict, expected: set, label: str) -> list:
 
 
 def main():
-    from twin_core._dev_fault_stub import FaultedSimulator, FAULT_PROFILES
+    from twin_core.m3_fault_source import FaultedSimulator, FAULT_PROFILES
     from twin_core.twin import DigitalTwin
     from twin_core.residual import ResidualEngine
     from twin_core.replay import save_csv, replay_csv, load_csv

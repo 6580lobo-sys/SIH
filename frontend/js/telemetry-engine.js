@@ -152,28 +152,45 @@ class TelemetryEngine {
     let resVib = 0.02;
 
     switch (this.activeFault) {
+      case 'abnormal_oil_temp':
+        targetOilT = 126.5;
+        targetOilP = 3.65;
+        resOilT = 32.3;
+        resOilP = -1.17;
+        targetHealth = 76.4;
+        break;
+
+      case 'elevated_egt':
+        targetEgt = 824.0;
+        targetFuel = 24.2;
+        resEgt = 211.2;
+        resFuel = 2.5;
+        targetHealth = 74.8;
+        break;
+
+      case 'cht_overheating':
       case 'overheating':
-        targetCht = 188.6;
-        targetEgt = 684.2;
-        targetOilT = 108.4;
-        resCht = 24.5;
-        resEgt = 72.0;
-        resOilT = 14.2;
-        targetHealth = 84.6;
+        targetCht = 218.6;
+        targetEgt = 742.0;
+        targetOilT = 118.4;
+        resCht = 51.2;
+        resEgt = 129.2;
+        resOilT = 24.2;
+        targetHealth = 54.6;
         break;
 
       case 'oil_pressure_drop':
-        targetOilP = 2.38;
-        targetOilT = 104.1;
-        resOilP = -2.44;
-        resOilT = 9.9;
-        targetHealth = 82.1;
+        targetOilP = 1.38;
+        targetOilT = 112.1;
+        resOilP = -3.44;
+        resOilT = 17.9;
+        targetHealth = 58.1;
         break;
 
       case 'vibration_bearing_fault':
-        targetVib = 1.48;
-        resVib = 0.64;
-        targetHealth = 86.4;
+        targetVib = 3.82;
+        resVib = 2.98;
+        targetHealth = 64.4;
         break;
 
       case 'misfire_or_injector_fault':
@@ -187,27 +204,39 @@ class TelemetryEngine {
         break;
 
       case 'fuel_mixture_drift':
-        targetEgt = 658.0;
-        targetFuel = 24.8;
-        resEgt = 45.2;
-        resFuel = 3.1;
-        targetHealth = 91.8;
+        targetEgt = 758.0;
+        targetFuel = 28.8;
+        resEgt = 145.2;
+        resFuel = 7.1;
+        targetHealth = 81.8;
         break;
 
       case 'cooling_system_fault':
-        targetCht = 184.2;
-        targetOilT = 102.6;
-        resCht = 20.1;
-        resOilT = 8.4;
-        targetHealth = 88.5;
+        targetCht = 196.2;
+        targetOilT = 109.6;
+        resCht = 28.8;
+        resOilT = 15.4;
+        targetHealth = 78.5;
         break;
 
       case 'engine_overspeed':
-        targetRpm = 2680;
-        targetFuel = 25.4;
-        resRpm = 242.0;
-        resFuel = 3.7;
-        targetHealth = 83.2;
+        targetRpm = 2850;
+        targetFuel = 26.4;
+        resRpm = 412.0;
+        resFuel = 4.7;
+        targetHealth = 71.2;
+        break;
+
+      case 'compound_failure':
+        targetOilP = 1.45;
+        targetOilT = 129.0;
+        targetCht = 226.0;
+        targetVib = 3.65;
+        resOilP = -3.37;
+        resOilT = 34.8;
+        resCht = 58.6;
+        resVib = 2.81;
+        targetHealth = 28.4;
         break;
 
       case 'healthy':
@@ -265,6 +294,141 @@ class TelemetryEngine {
 
     // Notify listeners
     this.subscribers.forEach(cb => cb(eng, this.history, this.activeFault, this.system));
+  }
+
+  evaluateLiveProbe(probe) {
+    const rpm = Number(probe.rpm || 2438);
+    const throttle = Number(probe.throttle || 65);
+    const oilTemp = Number(probe.oilTemp || 94.2);
+    const oilPress = Number(probe.oilPress || 4.82);
+    const cht = Number(probe.cht || 167.4);
+    const egt = Number(probe.egt || 612.8);
+    const fuelFlow = Number(probe.fuelFlow || 21.7);
+    const vib = Number(probe.vibration || 0.84);
+    const missionHours = Number(probe.missionDurationHours || 8.0);
+
+    // M1 Physics Twin Expected Baseline
+    const predRpm = 1400 + (throttle / 100) * 1600;
+    const predCht = 90 + (throttle / 100) * 115;
+    const predEgt = 520 + (throttle / 100) * 140;
+    const predOilP = 2.5 + (throttle / 100) * 3.5;
+    const predOilT = 60 + (throttle / 100) * 50;
+    const predFuel = 3.0 + (throttle / 100) * 28;
+    const predVib = 0.2 + (throttle / 100) * 0.9;
+
+    // M1 Residuals (Actual - Predicted)
+    const resRpm = +(rpm - predRpm).toFixed(1);
+    const resCht = +(cht - predCht).toFixed(1);
+    const resEgt = +(egt - predEgt).toFixed(1);
+    const resOilP = +(oilPress - predOilP).toFixed(2);
+    const resOilT = +(oilTemp - predOilT).toFixed(1);
+    const resFuel = +(fuelFlow - predFuel).toFixed(2);
+    const resVib = +(vib - predVib).toFixed(2);
+
+    // M2 Normalization & Composite Score
+    const normCht = Math.abs(resCht) / 15.0;
+    const normEgt = Math.abs(resEgt) / 35.0;
+    const normOilP = Math.abs(resOilP) / 0.8;
+    const normOilT = Math.abs(resOilT) / 10.0;
+    const normFuel = Math.abs(resFuel) / 2.5;
+    const normVib = Math.abs(resVib) / 0.4;
+    const normRpm = Math.abs(resRpm) / 120.0;
+
+    const compositeScore = Math.sqrt(
+      0.22 * (normOilP ** 2) +
+      0.20 * (normCht ** 2) +
+      0.18 * (normEgt ** 2) +
+      0.16 * (normOilT ** 2) +
+      0.14 * (normVib ** 2) +
+      0.05 * (normFuel ** 2) +
+      0.05 * (normRpm ** 2)
+    );
+
+    // M2 Health Index (Exponential decay HI = 100 * exp(-0.5 * D))
+    const healthIndex = Math.max(0.0, Math.min(100.0, +(100.0 * Math.exp(-0.5 * compositeScore)).toFixed(1)));
+
+    // ISO Severity
+    let severity = 'NORMAL';
+    if (healthIndex < 40.0 || compositeScore > 2.5) severity = 'CRITICAL_RTB';
+    else if (healthIndex < 65.0 || compositeScore > 1.4) severity = 'WARNING';
+    else if (healthIndex < 85.0 || compositeScore > 0.6) severity = 'ADVISORY';
+
+    // RUL with 95% Confidence Interval
+    const maxRulMin = missionHours * 60.0;
+    let rulEst = maxRulMin;
+    let rulLower = maxRulMin * 0.92;
+    let rulUpper = maxRulMin * 1.08;
+
+    if (healthIndex < 85.0) {
+      const slope = Math.max(0.05, (85.0 - healthIndex) / 12.0);
+      const estMin = Math.max(0.0, (healthIndex - 20.0) / slope);
+      rulEst = Math.min(maxRulMin, +estMin.toFixed(1));
+      const se = Math.max(4.0, rulEst * 0.12);
+      rulLower = Math.max(0.0, +(rulEst - 1.96 * se).toFixed(1));
+      rulUpper = Math.min(maxRulMin * 1.1, +(rulEst + 1.96 * se).toFixed(1));
+    }
+
+    // M4 Isolation Forest & Random Forest multi-class simulation
+    let isAnomaly = compositeScore > 0.65;
+    let anomalyScore = Math.min(1.0, Math.max(0.0, +(compositeScore / 2.8).toFixed(4)));
+
+    let predictedClass = 'healthy';
+    let confidence = 0.95;
+    let topFeatures = ['health_index', 'baseline_rul', 'fuel_flow_min_30s'];
+
+    if (oilPress < 2.5 || resOilP < -1.5) {
+      isAnomaly = true;
+      predictedClass = 'oil_pressure_drop';
+      confidence = +(0.88 + Math.random() * 0.08).toFixed(3);
+      topFeatures = ['res_oil_p', 'oil_temp_slope_30s', 'health_index'];
+    } else if (cht > 200 || resCht > 35) {
+      isAnomaly = true;
+      predictedClass = 'overheating';
+      confidence = +(0.89 + Math.random() * 0.07).toFixed(3);
+      topFeatures = ['res_cht', 'egt_mean_30s', 'health_index'];
+    } else if (egt > 780 || resEgt > 120) {
+      isAnomaly = true;
+      predictedClass = 'misfire_or_injector_fault';
+      confidence = +(0.86 + Math.random() * 0.08).toFixed(3);
+      topFeatures = ['res_egt', 'fuel_flow_min_30s', 'rpm_std_30s'];
+    } else if (vib > 2.0 || resVib > 1.2) {
+      isAnomaly = true;
+      predictedClass = 'vibration_bearing_fault';
+      confidence = +(0.91 + Math.random() * 0.06).toFixed(3);
+      topFeatures = ['res_vib', 'vibration_std_30s', 'health_index'];
+    } else if (oilTemp > 115 || resOilT > 20) {
+      isAnomaly = true;
+      predictedClass = 'cooling_system_fault';
+      confidence = +(0.85 + Math.random() * 0.08).toFixed(3);
+      topFeatures = ['res_oil_t', 'cht_slope_30s', 'health_index'];
+    } else if (rpm > 2650 || resRpm > 250) {
+      isAnomaly = true;
+      predictedClass = 'engine_overspeed';
+      confidence = +(0.93 + Math.random() * 0.05).toFixed(3);
+      topFeatures = ['res_rpm', 'throttle_cmd', 'fuel_flow_max_30s'];
+    }
+
+    if (oilPress < 2.2 && (cht > 200 || vib > 2.0)) {
+      predictedClass = 'compound_failure';
+      confidence = 0.96;
+      topFeatures = ['res_oil_p', 'res_cht', 'res_vib'];
+    }
+
+    return {
+      inputs: probe,
+      residuals: { resRpm, resCht, resEgt, resOilP, resOilT, resFuel, resVib },
+      compositeScore: +compositeScore.toFixed(4),
+      healthIndex,
+      severity,
+      rul: { est: rulEst, lower: rulLower, upper: rulUpper, status: healthIndex < 85 ? 'estimable' : 'beyond_horizon' },
+      ml: {
+        isAnomaly,
+        anomalyScore,
+        predictedClass,
+        confidence,
+        topFeatures
+      }
+    };
   }
 
   getTelemetry() {

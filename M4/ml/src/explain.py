@@ -1,8 +1,14 @@
 import numpy as np
 import pandas as pd
-import shap
+try:
+    import shap
+except ImportError:
+    shap = None
 import joblib
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 from src.config import *
 
 def load_explainer(rfc, X_background):

@@ -120,6 +120,8 @@ def predict_engine_health(window_df: pd.DataFrame) -> dict:
         sensor_values=sensor_vals
     )
     
+    prob_dict = {INT_TO_FAULT_TYPE[i]: round(float(p), 4) for i, p in enumerate(proba)}
+    
     return {
         "timestamp": datetime.utcnow().isoformat(),
         "is_anomaly": is_anomaly,
@@ -127,6 +129,7 @@ def predict_engine_health(window_df: pd.DataFrame) -> dict:
         "health_state": health_state,
         "fault_type": fault_type,
         "confidence": round(confidence, 4),
+        "probabilities": prob_dict,
         "top_features": explanation["top_features"],
         "explanation": explanation["explanation"],
         "severity": severity

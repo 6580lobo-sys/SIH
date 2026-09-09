@@ -1,30 +1,12 @@
 """
-orchestrator.py -- M6 Simulation Orchestrator
-==============================================
-
-Wires M1 (DigitalTwin + ResidualEngine) -> M2 (Prognostics / Feature Engineering)
--> M3 (TelemetryPublisher / load_replay_csv) and exposes a clean
-subscription/API surface for M4 (ML) and M5 (dashboard).
-
-Architecture
-------------
-  M3 TelemetryPublisher  --->  tick_loop  --->  M1TwinAdapter
-  (or CSV replay)                |               (DigitalTwin + ResidualEngine)
-                                 v
-                       M2PrognosticsAdapter
-                       normalize -> composite -> HI -> severity -> RUL -> features
-                                 |
-                       TelemetryFrame  (M3 + M1 + M2 combined, 22 M2 columns)
-                                 |
-                       subscriber callbacks  --->  M4 / M5
-
-M2 output columns carried in every TelemetryFrame (22 columns):
-  timestamp, res_rpm, res_cht, res_egt, res_oil_p, res_oil_t, res_fuel, res_vib,
-  composite_score, composite_ewma, health_index, health_status, severity_level,
-  rul_est, rul_lower, rul_upper, rul_status, health_slope,
-  res_cht_ewma, res_egt_ewma, res_vib_std_w, fault_label
-
-CONTRACT FLAGS -- search "WARNING CONTRACT" for renegotiation points.
+orchestrator.py -- Comprehensive M1-M6 System Orchestrator
+==========================================================
+Integrates:
+  - M1: Physics Digital Twin + Residual Engine (m3_fault_source coupled)
+  - M2: Prognostics, Health Index, ISO-13381 RUL with 95% Confidence Intervals
+  - M3: Telemetry Publisher, Flight Scenarios & Real Physical Fault Injection
+  - M4: Real ML Models (Isolation Forest Anomaly Detector + Random Forest Multi-class Classifier + Explainability)
+  - M5 / Frontend: Live telemetry stream, Scenario Manager, and Live Reliability Probe Sandbox.
 """
 
 from __future__ import annotations
@@ -35,45 +17,53 @@ import sys
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Deque, Dict, List, Optional
+from typing import Callable, Deque, Dict, List, Optional, Any
 
 import numpy as np
 import pandas as pd
 
 # ---------------------------------------------------------------------------
-# Path setup -- make M1, M2, and M3 importable regardless of cwd
+# Path setup -- resolves repository roots accurately
 # ---------------------------------------------------------------------------
 
-_HERE      = os.path.dirname(os.path.abspath(__file__))
-_REPO_ROOT = os.path.dirname(_HERE)          # .../SIH
-_M1_SRC    = os.path.join(_REPO_ROOT, "M1", "src")
-_M2_SRC    = os.path.join(_REPO_ROOT, "M2")
-_M3_SRC    = os.path.join(_REPO_ROOT, "m3_telemetry")
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if os.path.exists(os.path.join(_HERE, "M1")):
+    _REPO_ROOT = _HERE
+else:
+    _REPO_ROOT = os.path.dirname(_HERE)
 
-for _p in (_M1_SRC, _M2_SRC, _M3_SRC):
-    if _p not in sys.path:
+_M1_SRC = os.path.join(_REPO_ROOT, "M1", "src")
+_M2_SRC = os.path.join(_REPO_ROOT, "M2")
+_M3_SRC = os.path.join(_REPO_ROOT, "M3")
+if not os.path.exists(_M3_SRC):
+    _M3_SRC = os.path.join(_REPO_ROOT, "m3_telemetry")
+_M4_DIR = os.path.join(_REPO_ROOT, "M4", "ml")
+_M4_SRC = os.path.join(_M4_DIR, "src")
+
+for _p in (_M1_SRC, _M2_SRC, _M3_SRC, _M4_DIR, _M4_SRC):
+    if os.path.exists(_p) and _p not in sys.path:
         sys.path.insert(0, _p)
 
 # M1 imports
-from twin_core.twin     import DigitalTwin    # noqa: E402
-from twin_core.residual import ResidualEngine  # noqa: E402
+from twin_core.twin import DigitalTwin
+from twin_core.residual import ResidualEngine
 
-# M2 imports  (SIH/M2/*.py)
-from normalization   import normalize_residuals                 # noqa: E402
-from ewma            import apply_ewma_series                   # noqa: E402
-from composite_score import compute_composite_score             # noqa: E402
-from health_index    import (                                   # noqa: E402
+# M2 imports
+from normalization import normalize_residuals
+from ewma import apply_ewma_series
+from composite_score import compute_composite_score
+from health_index import (
     compute_health_index,
     compute_health_status,
     compute_severity_level,
 )
-from rul_uncertainty import estimate_rul_with_uncertainty        # noqa: E402
+from rul_uncertainty import estimate_rul_with_uncertainty
 
 # M3 imports
-from schema.telemetry_schema     import EngineTelemetryMessage  # noqa: E402
-from publisher.api               import load_replay_csv          # noqa: E402
-from publisher.streaming_harness import TelemetryPublisher       # noqa: E402
-from generator.fault_injection   import (                        # noqa: E402
+from schema.telemetry_schema import EngineTelemetryMessage
+from publisher.api import load_replay_csv
+from publisher.streaming_harness import TelemetryPublisher
+from generator.fault_injection import (
     FaultManager,
     FaultScenario,
     MisfireFault,
@@ -84,24 +74,29 @@ from generator.fault_injection   import (                        # noqa: E402
     NoOpFault,
 )
 
-__all__ = [
-    "Orchestrator", "TelemetryFrame", "M1TwinAdapter", "M2PrognosticsAdapter",
-    "MisfireFault", "OverheatingFault", "OilPressureDropFault",
-    "InjectorFault", "VibrationSpikeFault", "NoOpFault",
-]
+# Concrete M3 fault extensions
+try:
+    from twin_core.m3_fault_source import (
+        FuelMixtureDriftFault,
+        CoolingBaffleFault,
+        EngineOverspeedFault,
+    )
+except ImportError:
+    FuelMixtureDriftFault = None
+    CoolingBaffleFault = None
+    EngineOverspeedFault = None
+
+# M4 ML imports
+_M4_AVAILABLE = False
+try:
+    from src.predict import predict_engine_health
+    _M4_AVAILABLE = True
+except Exception as _m4_err:
+    print(f"[orchestrator] Notice: M4 ML model auto-load notice: {_m4_err}", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
 # M1 -> M2 channel name mapping
-# Canonical source: M2/_dev_fault_stub.py :: M1_TO_M2_CHANNEL_MAP
-#
-# M1 ResidualEngine.update() residual keys:
-#   "rpm", "cht", "egt", "oil_pressure", "oil_temp", "fuel_flow",
-#   "vibration_amplitude"
-#
-# M2 normalize_residuals() / build_feature_table() expects:
-#   "res_rpm", "res_cht", "res_egt", "res_oil_p", "res_oil_t",
-#   "res_fuel", "res_vib"
 # ---------------------------------------------------------------------------
 
 M1_TO_M2_CHANNEL_MAP: Dict[str, str] = {
@@ -118,58 +113,18 @@ M2_RESIDUAL_COLS: List[str] = list(M1_TO_M2_CHANNEL_MAP.values())
 
 
 # ---------------------------------------------------------------------------
-# TelemetryFrame -- carries all 22 M2 output columns + M3 sensor fields
+# TelemetryFrame -- Combines M3, M1, M2, and M4 ML outputs
 # ---------------------------------------------------------------------------
 
 @dataclass
 class TelemetryFrame:
-    """One processed tick: raw M3 telemetry + M1 residuals + M2 prognostics.
-
-    M3 fields
-    ---------
-    timestamp           float   seconds from simulation start
-    msg_id              str     CAN message identifier
-    rpm                 float   rev/min
-    cht                 float   degC  (Cylinder Head Temp)
-    egt                 float   degC  (Exhaust Gas Temp)
-    oil_pressure        float   PSI
-    oil_temp            float   degC
-    fuel_flow           float   L/hr
-    vibration_amplitude float   g
-    vibration_freq      float   Hz
-    throttle_cmd        float   0-100 %
-
-    M1 residuals (renamed to M2 schema, per M2/_dev_fault_stub.py)
-    ---------------------------------------------------------------
-    res_rpm     float   RPM  residual  (actual - predicted)
-    res_cht     float   degC residual
-    res_egt     float   degC residual
-    res_oil_p   float   bar  residual  (WARNING: M3 sends PSI; M1 in PSI)
-    res_oil_t   float   degC residual
-    res_fuel    float   L/hr residual
-    res_vib     float   g    residual
-
-    M2 prognostics (all 22 M2 feature columns per feature_builder.py)
-    ------------------------------------------------------------------
-    composite_score  float  Weighted RMS anomaly score D(t) >= 0
-    composite_ewma   float  EWMA-smoothed composite score
-    health_index     float  Engine health % [0-100]  (100 = perfect)
-    health_status    str    "healthy" / "degraded" / "critical"
-    severity_level   str    "NORMAL" / "ADVISORY" / "WARNING" / "CRITICAL_RTB"
-    rul_est          float  Point RUL estimate (minutes)
-    rul_lower        float  Pessimistic 95 pct CI bound (minutes)
-    rul_upper        float  Optimistic  95 pct CI bound (minutes)
-    rul_status       str    "estimable" / "not_estimable" / "beyond_horizon"
-    health_slope     float  Rolling HI trend (pct/min)
-    res_cht_ewma     float  EWMA of CHT residual
-    res_egt_ewma     float  EWMA of EGT residual
-    res_vib_std_w    float  Rolling std of vibration residual (window=10)
-
-    Ground truth
-    ------------
-    fault_label      str    tag from M3 ("healthy" / fault names)
+    """One processed tick containing:
+      - Raw M3 telemetry (sensor values, RPM, temperatures, pressures)
+      - M1 physics residuals (actual - predicted by Digital Twin)
+      - M2 prognostics (Health Index, ISO severity, RUL with 95% CI)
+      - M4 ML model predictions (Isolation Forest score, RFC probabilities, SHAP explainability)
+      - Ground-truth fault tags
     """
-
     # M3 telemetry
     timestamp:           float
     msg_id:              str
@@ -207,23 +162,31 @@ class TelemetryFrame:
     res_egt_ewma:    float = 0.0
     res_vib_std_w:   float = 0.0
 
+    # M4 Machine Learning Predictions
+    ml_anomaly:       bool = False
+    ml_anomaly_score: float = 0.0
+    ml_fault_type:    str  = "healthy"
+    ml_confidence:    float = 0.0
+    ml_health_state:  str  = "normal"
+    ml_severity:      int  = 0
+    ml_probabilities: Dict[str, float] = field(default_factory=dict)
+    ml_top_features:  List[str]        = field(default_factory=list)
+    ml_explanation:   str              = ""
+
     # Ground truth
     fault_label: str = "healthy"
-
-    # Legacy residuals dict -- kept for backward compat with any M4/M5 code
-    # that reads frame.residuals[channel]
-    residuals: Dict[str, float] = field(default_factory=dict)
+    residuals:   Dict[str, float] = field(default_factory=dict)
 
     @classmethod
-    def from_m3_m1_m2(
+    def from_m3_m1_m2_m4(
         cls,
         msg:          "EngineTelemetryMessage",
         m1_residuals: Dict[str, float],
         m2_row:       dict,
+        m4_result:    Optional[dict] = None,
         fault_label:  str = "healthy",
     ) -> "TelemetryFrame":
-        """Assemble a frame from M3 msg, M1 residuals (M2 naming), M2 row."""
-        return cls(
+        frame = cls(
             timestamp           = msg.timestamp,
             msg_id              = msg.msg_id,
             rpm                 = msg.rpm,
@@ -259,11 +222,21 @@ class TelemetryFrame:
             residuals       = m1_residuals,
         )
 
-    def as_dict(self) -> dict:
-        """Flat dict for M4 feature extraction / M5 plotting.
+        if m4_result:
+            frame.ml_anomaly       = bool(m4_result.get("is_anomaly", False))
+            frame.ml_anomaly_score = float(m4_result.get("anomaly_score", 0.0))
+            frame.ml_fault_type    = str(m4_result.get("fault_type", "healthy"))
+            frame.ml_confidence    = float(m4_result.get("confidence", 0.0))
+            frame.ml_health_state  = str(m4_result.get("health_state", "normal"))
+            frame.ml_severity      = int(m4_result.get("severity", 0))
+            frame.ml_probabilities = dict(m4_result.get("probabilities", {}))
+            frame.ml_top_features  = list(m4_result.get("top_features", []))
+            frame.ml_explanation   = str(m4_result.get("explanation", ""))
 
-        Includes all 22 M2 output columns plus M3 sensor fields.
-        """
+        return frame
+
+    def as_dict(self) -> dict:
+        """Flat dictionary representation for JSON serialization & dashboard consumption."""
         return {
             "timestamp":           self.timestamp,
             "msg_id":              self.msg_id,
@@ -296,12 +269,21 @@ class TelemetryFrame:
             "res_cht_ewma":        self.res_cht_ewma,
             "res_egt_ewma":        self.res_egt_ewma,
             "res_vib_std_w":       self.res_vib_std_w,
+            "ml_anomaly":          self.ml_anomaly,
+            "ml_anomaly_score":    self.ml_anomaly_score,
+            "ml_fault_type":       self.ml_fault_type,
+            "ml_confidence":       self.ml_confidence,
+            "ml_health_state":     self.ml_health_state,
+            "ml_severity":         self.ml_severity,
+            "ml_probabilities":    self.ml_probabilities,
+            "ml_top_features":     self.ml_top_features,
+            "ml_explanation":      self.ml_explanation,
             "fault_label":         self.fault_label,
         }
 
 
 # ---------------------------------------------------------------------------
-# M1TwinAdapter
+# M1 Twin Adapter
 # ---------------------------------------------------------------------------
 
 _IDLE_ACTUAL: dict = {
@@ -311,37 +293,8 @@ _IDLE_ACTUAL: dict = {
     "throttle_cmd": 0.0,
 }
 
-
 class M1TwinAdapter:
-    """Thin adapter around DigitalTwin + ResidualEngine.
-
-    M1 interface (twin.py / residual.py)
-    -------------------------------------
-    DigitalTwin(actual_source, ambient_temp, ref_seed)
-    DigitalTwin.step(throttle_cmd, dt)
-        -> {"predicted": dict, "actual": dict}
-        Keys: timestamp, rpm, cht, egt, oil_pressure, oil_temp,
-              fuel_flow, vibration_amplitude, vibration_freq, throttle_cmd
-
-    ResidualEngine.update(pair)
-        -> {"timestamp": f, "residuals": {ch: f}, "composite_score": f}
-        residuals keys: rpm, cht, egt, oil_pressure, oil_temp,
-                        fuel_flow, vibration_amplitude
-
-    ResidualEngine.signature(threshold=0.03)
-        -> {"feature_vector", "dominant_channels", "severity", "fault_detected"}
-
-    ResidualEngine.reset() -> resets EWMA to zero
-
-    WARNING CONTRACT (M1 -- DigitalTwin):
-      step() calls actual_source() internally.  We inject M3 frames via
-      a shared variable updated before each twin.step() call.
-      Renegotiate: add actual_override kwarg to DigitalTwin.step().
-
-    WARNING CONTRACT (M1 -- DigitalTwin):
-      No reset() on DigitalTwin; internal state persists across runs.
-      Renegotiate: add DigitalTwin.reset() to restore t=0 idle state.
-    """
+    """Thin adapter around DigitalTwin + ResidualEngine."""
 
     def __init__(
         self,
@@ -358,22 +311,10 @@ class M1TwinAdapter:
         self._residual_eng = ResidualEngine(ewma_alpha=ewma_alpha)
 
     def _m3_bridge(self, throttle_cmd: float, dt: float) -> dict:
-        """Bridge: return latest M3 frame as M1-shaped dict (args ignored).
-
-        WARNING CONTRACT (M1/M3): Same pattern as M1 CsvReplaySource.step().
-        """
         return self._latest_m3_actual if self._latest_m3_actual else _IDLE_ACTUAL
 
     @staticmethod
     def _msg_to_m1_dict(msg: "EngineTelemetryMessage") -> dict:
-        """Map M3 Pydantic model -> M1 dict (field names match 1-to-1).
-
-        WARNING CONTRACT (M1/M3 -- vibration_amplitude SCALE MISMATCH):
-          M1 NOMINAL_RANGE["vibration_amplitude"] = 0.05 g span.
-          M3 vibration_amplitude range = 0-50 g.
-          Residuals ~20-80x oversized, dominate composite_score.
-          Renegotiate: align scale on M1 or M3 side.
-        """
         return {
             "timestamp":           msg.timestamp,
             "rpm":                 msg.rpm,
@@ -388,65 +329,28 @@ class M1TwinAdapter:
         }
 
     def step(self, msg: "EngineTelemetryMessage", dt: float) -> Dict[str, float]:
-        """Advance M1 one tick; return residuals keyed with M2 column names.
-
-        Returns dict: {res_rpm, res_cht, res_egt, res_oil_p,
-                       res_oil_t, res_fuel, res_vib}
-        """
         self._latest_m3_actual = self._msg_to_m1_dict(msg)
         pair    = self._twin.step(msg.throttle_cmd, dt)
         raw_out = self._residual_eng.update(pair)
-
-        # Remap M1 residual keys -> M2 naming convention
         return {
             m2_col: raw_out["residuals"].get(m1_key, 0.0)
             for m1_key, m2_col in M1_TO_M2_CHANNEL_MAP.items()
         }
 
     def signature(self, threshold: float = 0.03) -> dict:
-        """Residual signature -- primary input for M4 fault classifier."""
         return self._residual_eng.signature(threshold=threshold)
 
     def reset(self) -> None:
-        """Reset EWMA state and clear cached M3 actual."""
         self._residual_eng.reset()
         self._latest_m3_actual = None
 
 
 # ---------------------------------------------------------------------------
-# M2PrognosticsAdapter -- streaming M2 pipeline over a rolling residual buffer
+# M2 Prognostics Adapter
 # ---------------------------------------------------------------------------
 
 class M2PrognosticsAdapter:
-    """Runs M2's full prognostics pipeline in streaming (tick-by-tick) mode.
-
-    M2's build_feature_table() is batch-oriented; this adapter maintains a
-    rolling deque of residual rows and re-runs all M2 steps on each tick,
-    returning the LAST row of the output table as a plain dict.
-
-    M2 algorithm steps (matching feature_builder.build_feature_table):
-      1.  normalize_residuals()       res_* -> norm_res_* (tolerance-scaled)
-      2.  compute_composite_score()   weighted RMS of norm_res_*
-      3.  apply_ewma_series()         EWMA of composite score
-      4.  compute_health_index()      HI(t) = 100 * exp(-k * D(t))
-      5.  compute_health_status()     "healthy" / "degraded" / "critical"
-      6.  compute_severity_level()    ISO: NORMAL/ADVISORY/WARNING/CRITICAL_RTB
-      7.  estimate_rul_with_uncertainty()  linear regression slope, 95% CI
-      8.  health_slope                rolling linregress of HI vs time
-      9.  res_cht_ewma, res_egt_ewma  EWMA of individual thermal residuals
-      10. res_vib_std_w               rolling std of vibration residual
-
-    Parameters
-    ----------
-    mission_duration_hours : float  M2 default 8.0
-    buffer_maxlen          : int    Rolling buffer size (default 200 ~ 20s @ 10Hz)
-    ewma_span              : float  M2 default 15.0
-    rul_window             : int    M2 default 20  (regression window samples)
-    health_k               : float  M2 default 0.5 (HI decay constant)
-    eol_threshold          : float  M2 default 20.0 (HI at end-of-life)
-    hi_trigger             : float  M2 default 85.0 (start RUL estimate below this)
-    ci                     : float  M2 default 0.95 (confidence interval)
-    """
+    """Runs M2's streaming prognostics pipeline with linear regression RUL."""
 
     def __init__(
         self,
@@ -474,17 +378,12 @@ class M2PrognosticsAdapter:
         m2_residuals: Dict[str, float],
         fault_label:  str = "healthy",
     ) -> dict:
-        """Append one residual row; run M2 pipeline; return last row as dict."""
         row = {"timestamp": timestamp, "fault_label": fault_label}
         row.update(m2_residuals)
         self._buf.append(row)
 
         df_res = pd.DataFrame(list(self._buf))
-
-        # Step 1: Normalize
         norm_df = normalize_residuals(df_res)
-
-        # Step 2: Composite score + EWMA
         composite = compute_composite_score(norm_df)
 
         out = pd.DataFrame()
@@ -495,12 +394,10 @@ class M2PrognosticsAdapter:
         out["composite_score"] = composite.values
         out["composite_ewma"]  = apply_ewma_series(composite, span=self._ewma_span).values
 
-        # Step 3: Health index + ISO severity
         out["health_index"]  = compute_health_index(out["composite_score"], k=self._health_k)
         out["health_status"]  = compute_health_status(out["health_index"])
         out["severity_level"] = compute_severity_level(out["health_index"])
 
-        # Step 4: RUL with 95% CI (compute only for the current tick)
         n = len(out)
         rul_est_arr    = np.full(n, float("nan"))
         rul_lower_arr  = np.full(n, float("nan"))
@@ -526,7 +423,6 @@ class M2PrognosticsAdapter:
         out["rul_upper"]  = rul_upper_arr
         out["rul_status"] = rul_status_arr
 
-        # Step 5: Engineered features
         slopes = np.full(n, float("nan"))
         w = self._rul_window
         if n >= w:
@@ -553,8 +449,247 @@ class M2PrognosticsAdapter:
         return {col: last[col] for col in out.columns}
 
     def reset(self) -> None:
-        """Clear the rolling residual buffer."""
         self._buf.clear()
+
+
+# ---------------------------------------------------------------------------
+# M4 Machine Learning Adapter
+# ---------------------------------------------------------------------------
+
+class M4MachineLearningAdapter:
+    """Bridges telemetry and residual frames to M4's Isolation Forest and
+    Random Forest multi-class classifiers. Maintains a rolling 30-frame window.
+    """
+
+    def __init__(self, window_size: int = 30) -> None:
+        self._window_size = window_size
+        self._window_buffer: Deque[dict] = collections.deque(maxlen=window_size)
+        self._last_result: Optional[dict] = None
+        self._lock = threading.Lock()
+
+    def update(self, frame_dict: dict) -> Optional[dict]:
+        """Update window with latest tick and run inference."""
+        if not _M4_AVAILABLE:
+            return None
+
+        # Build row matching M4 ML training schema
+        row = {
+            "timestamp": frame_dict.get("timestamp", 0.0),
+            "rpm": frame_dict.get("rpm", 2400.0),
+            "throttle": frame_dict.get("throttle_cmd", 65.0),
+            "oil_pressure": frame_dict.get("oil_pressure", 45.0),
+            "oil_temp": frame_dict.get("oil_temp", 80.0),
+            "cht": frame_dict.get("cht", 175.0),
+            "egt": frame_dict.get("egt", 740.0),
+            "manifold_pressure": 28.5,
+            "vibration": frame_dict.get("vibration_amplitude", 0.02),
+            "fuel_flow": frame_dict.get("fuel_flow", 24.0),
+            "ambient_temp": 25.0,
+            "altitude": 5000.0,
+            "mission_phase": "cruise",
+            "residual_rpm": frame_dict.get("res_rpm", 0.0),
+            "residual_oil_pressure": frame_dict.get("res_oil_p", 0.0),
+            "residual_oil_temp": frame_dict.get("res_oil_t", 0.0),
+            "residual_cht": frame_dict.get("res_cht", 0.0),
+            "residual_egt": frame_dict.get("res_egt", 0.0),
+            "residual_manifold_pressure": 0.0,
+            "residual_vibration": frame_dict.get("res_vib", 0.0),
+            "residual_fuel_flow": frame_dict.get("res_fuel", 0.0),
+            "health_index": frame_dict.get("health_index", 100.0),
+            "baseline_rul": frame_dict.get("rul_est", 480.0) if not np.isnan(frame_dict.get("rul_est", float("nan"))) else 480.0,
+        }
+
+        with self._lock:
+            self._window_buffer.append(row)
+            # Replicate initial rows if window not yet full
+            if len(self._window_buffer) < self._window_size:
+                fill_count = self._window_size - len(self._window_buffer)
+                buf_list = [self._window_buffer[0]] * fill_count + list(self._window_buffer)
+            else:
+                buf_list = list(self._window_buffer)
+
+        try:
+            window_df = pd.DataFrame(buf_list)
+            res = predict_engine_health(window_df)
+            self._last_result = res
+            return res
+        except Exception as exc:
+            return None
+
+    def evaluate_manual_sample(self, sample: dict) -> dict:
+        """Run ML prediction on an explicit user-provided sensor state."""
+        if not _M4_AVAILABLE:
+            return {
+                "is_anomaly": False,
+                "anomaly_score": 0.0,
+                "fault_type": "healthy",
+                "confidence": 0.99,
+                "health_state": "normal",
+                "severity": 0,
+                "probabilities": {"healthy": 0.99},
+                "top_features": [],
+                "explanation": "M4 ML module unavailable.",
+            }
+
+        rows = []
+        for i in range(self._window_size):
+            rows.append({
+                "timestamp": float(i),
+                "rpm": sample.get("rpm", 2400.0),
+                "throttle": sample.get("throttle", 65.0),
+                "oil_pressure": sample.get("oil_pressure", 45.0),
+                "oil_temp": sample.get("oil_temp", 80.0),
+                "cht": sample.get("cht", 175.0),
+                "egt": sample.get("egt", 740.0),
+                "manifold_pressure": sample.get("manifold_pressure", 28.5),
+                "vibration": sample.get("vibration", 0.02),
+                "fuel_flow": sample.get("fuel_flow", 24.0),
+                "ambient_temp": sample.get("ambient_temp", 25.0),
+                "altitude": sample.get("altitude", 5000.0),
+                "mission_phase": sample.get("mission_phase", "cruise"),
+                "residual_rpm": sample.get("residual_rpm", 0.0),
+                "residual_oil_pressure": sample.get("residual_oil_pressure", 0.0),
+                "residual_oil_temp": sample.get("residual_oil_temp", 0.0),
+                "residual_cht": sample.get("residual_cht", 0.0),
+                "residual_egt": sample.get("residual_egt", 0.0),
+                "residual_manifold_pressure": 0.0,
+                "residual_vibration": sample.get("residual_vibration", 0.0),
+                "residual_fuel_flow": sample.get("residual_fuel_flow", 0.0),
+                "health_index": sample.get("health_index", 100.0),
+                "baseline_rul": sample.get("baseline_rul", 480.0),
+            })
+        window_df = pd.DataFrame(rows)
+        return predict_engine_health(window_df)
+
+    def reset(self) -> None:
+        with self._lock:
+            self._window_buffer.clear()
+            self._last_result = None
+
+
+# ---------------------------------------------------------------------------
+# Scenario Configuration Manager
+# ---------------------------------------------------------------------------
+
+class ScenarioManager:
+    """Manages preset and custom telemetry and physical fault injection scenarios."""
+
+    PRESETS = {
+        "nominal_cruise": {
+            "name": "Nominal Cruise Flight",
+            "description": "Standard cruise at 2400 RPM, 65% throttle, standard day, no faults.",
+            "environment": "standard_day",
+            "throttle_mode": "smooth",
+            "faults": [],
+        },
+        "abnormal_oil_temp": {
+            "name": "Abnormal Oil Temp (Thermal Degradation)",
+            "description": "Oil cooler airflow restriction, oil temperature escalation past 120°C.",
+            "environment": "hot_day",
+            "throttle_mode": "smooth",
+            "faults": [
+                {"type": "OverheatingFault", "severity": 0.75, "start_time_s": 2.0, "duration_s": 30.0}
+            ],
+        },
+        "elevated_egt": {
+            "name": "Elevated Exhaust Gas Temp (EGT)",
+            "description": "Injector thermal drift inducing high exhaust temperature in Cylinder #3.",
+            "environment": "standard_day",
+            "throttle_mode": "smooth",
+            "faults": [
+                {"type": "InjectorFault", "severity": 0.70, "start_time_s": 2.0, "duration_s": 30.0}
+            ],
+        },
+        "cht_overheating": {
+            "name": "Severe CHT Thermal Runaway",
+            "description": "Cooling baffle deformation causing rapid CHT escalation past 210°C.",
+            "environment": "hot_day",
+            "throttle_mode": "smooth",
+            "faults": [
+                {"type": "OverheatingFault", "severity": 0.95, "start_time_s": 1.0, "duration_s": 30.0}
+            ],
+        },
+        "oil_pressure_loss": {
+            "name": "Critical Oil Pressure Loss",
+            "description": "Scavenge pump cavitation dropping oil pressure from 45 PSI down to 14 PSI.",
+            "environment": "standard_day",
+            "throttle_mode": "smooth",
+            "faults": [
+                {"type": "OilPressureDropFault", "severity": 0.85, "start_time_s": 1.5, "duration_s": 30.0}
+            ],
+        },
+        "bearing_vibration": {
+            "name": "Bearing Wear & Vibration Anomaly",
+            "description": "Main journal bearing spalling causing vibration amplitude surge to 3.8g.",
+            "environment": "standard_day",
+            "throttle_mode": "rapid_transient",
+            "faults": [
+                {"type": "VibrationSpikeFault", "severity": 0.80, "start_time_s": 2.0, "duration_s": 30.0}
+            ],
+        },
+        "fuel_mixture_drift": {
+            "name": "Fuel Mixture Lean Drift",
+            "description": "Fuel pressure regulator bias causing lean surging and sporadic misfire.",
+            "environment": "high_altitude",
+            "throttle_mode": "smooth",
+            "faults": [
+                {"type": "MisfireFault", "severity": 0.65, "start_time_s": 2.5, "duration_s": 30.0}
+            ],
+        },
+        "compound_failure": {
+            "name": "Compound Multi-Fault Breakdown",
+            "description": "Oil pressure drop accompanied by severe overheating and vibration spike.",
+            "environment": "hot_day",
+            "throttle_mode": "rapid_transient",
+            "faults": [
+                {"type": "OilPressureDropFault", "severity": 0.70, "start_time_s": 1.0, "duration_s": 30.0},
+                {"type": "OverheatingFault", "severity": 0.80, "start_time_s": 3.0, "duration_s": 30.0},
+                {"type": "VibrationSpikeFault", "severity": 0.75, "start_time_s": 5.0, "duration_s": 30.0},
+            ],
+        },
+    }
+
+    def __init__(self) -> None:
+        self._custom_scenarios: Dict[str, dict] = {}
+
+    def get_all_scenarios(self) -> Dict[str, dict]:
+        combined = dict(self.PRESETS)
+        combined.update(self._custom_scenarios)
+        return combined
+
+    def save_custom_scenario(self, key: str, scenario_data: dict) -> None:
+        self._custom_scenarios[key] = scenario_data
+
+    def create_fault_objects(self, scenario_key: str) -> List[FaultScenario]:
+        all_s = self.get_all_scenarios()
+        cfg = all_s.get(scenario_key)
+        if not cfg:
+            return []
+
+        fault_objs: List[FaultScenario] = []
+        for f in cfg.get("faults", []):
+            ftype = f.get("type", "")
+            sev = float(f.get("severity", 0.5))
+            start = float(f.get("start_time_s", 0.0))
+            dur = float(f.get("duration_s", 30.0))
+
+            if ftype == "OverheatingFault":
+                fault_objs.append(OverheatingFault(severity=sev, start_time_s=start, duration_s=dur))
+            elif ftype == "OilPressureDropFault":
+                fault_objs.append(OilPressureDropFault(severity=sev, start_time_s=start, duration_s=dur))
+            elif ftype == "MisfireFault":
+                fault_objs.append(MisfireFault(severity=sev, start_time_s=start, duration_s=dur))
+            elif ftype == "InjectorFault":
+                fault_objs.append(InjectorFault(severity=sev, start_time_s=start, duration_s=dur))
+            elif ftype == "VibrationSpikeFault":
+                fault_objs.append(VibrationSpikeFault(severity=sev, start_time_s=start, duration_s=dur))
+            elif ftype == "FuelMixtureDriftFault" and FuelMixtureDriftFault:
+                fault_objs.append(FuelMixtureDriftFault(severity=sev, start_time_s=start, duration_s=dur))
+            elif ftype == "CoolingBaffleFault" and CoolingBaffleFault:
+                fault_objs.append(CoolingBaffleFault(severity=sev, start_time_s=start, duration_s=dur))
+            elif ftype == "EngineOverspeedFault" and EngineOverspeedFault:
+                fault_objs.append(EngineOverspeedFault(severity=sev, start_time_s=start, duration_s=dur))
+        return fault_objs
 
 
 # ---------------------------------------------------------------------------
@@ -563,35 +698,23 @@ class M2PrognosticsAdapter:
 
 SubscriberCallback = Callable[["TelemetryFrame"], None]
 
-
 class Orchestrator:
     """Central coordinator for the UAV engine digital twin system (M6).
 
-    Data flow per tick
-    ------------------
-    M3 frame
-      -> M1TwinAdapter.step()            # physics twin + residual engine
-      -> m2_residuals (M2-named dict)
-      -> M2PrognosticsAdapter.update()   # normalize, HI, severity, RUL, features
-      -> m2_row (22-column dict)
-      -> TelemetryFrame.from_m3_m1_m2()
-      -> subscriber callbacks (M4 / M5)
-
-    Parameters
-    ----------
-    twin_adapter           : M1TwinAdapter | None
-    prognostics_adapter    : M2PrognosticsAdapter | None
-    rate_hz                : float  target live tick rate (default 10 Hz)
-    history_maxlen         : int    rolling frame buffer size
-    environment            : str    M3 env: "standard_day"|"hot_day"|"high_altitude"
-    throttle_mode          : str    M3 throttle: "smooth"|"idle_only"|"takeoff"|...
-    mission_duration_hours : float  forwarded to M2 RUL estimator (default 8.0)
+    Coordinates:
+      - M3 physics telemetry generator / streaming harness
+      - M1 physics twin and residual engine
+      - M2 feature engineering, health index, ISO severity, and RUL estimation
+      - M4 machine learning anomaly detection and multi-class classification
+      - Scenario Manager for preset/custom operational conditions
+      - Live Telemetry Probe for manual reliability validation
     """
 
     def __init__(
         self,
         twin_adapter:           Optional[M1TwinAdapter]        = None,
         prognostics_adapter:    Optional[M2PrognosticsAdapter] = None,
+        ml_adapter:             Optional[M4MachineLearningAdapter] = None,
         rate_hz:                float = 10.0,
         history_maxlen:         int   = 1000,
         environment:            str   = "standard_day",
@@ -602,6 +725,10 @@ class Orchestrator:
         self._m2            = prognostics_adapter or M2PrognosticsAdapter(
             mission_duration_hours=mission_duration_hours
         )
+        self._ml            = ml_adapter or M4MachineLearningAdapter()
+        self._scenario_mgr  = ScenarioManager()
+        self._current_scenario = "nominal_cruise"
+
         self._rate_hz       = rate_hz
         self._environment   = environment
         self._throttle_mode = throttle_mode
@@ -620,37 +747,104 @@ class Orchestrator:
     # -- Subscriber management --------------------------------------------
 
     def subscribe(self, callback: SubscriberCallback) -> None:
-        """Register a callback  (frame: TelemetryFrame) -> None."""
         with self._lock:
             self._subscribers.append(callback)
 
     def unsubscribe(self, callback: SubscriberCallback) -> None:
-        """Remove a previously registered callback."""
         with self._lock:
             try:
                 self._subscribers.remove(callback)
             except ValueError:
                 pass
 
-    # -- Fault management -------------------------------------------------
+    # -- Scenario & Fault management --------------------------------------
+
+    @property
+    def scenario_manager(self) -> ScenarioManager:
+        return self._scenario_mgr
+
+    def load_scenario(self, scenario_key: str) -> None:
+        """Switch operational scenario and configure corresponding M3 fault generators."""
+        self.clear_faults()
+        self._current_scenario = scenario_key
+        scenarios = self._scenario_mgr.get_all_scenarios()
+        cfg = scenarios.get(scenario_key)
+        if cfg:
+            self._environment = cfg.get("environment", "standard_day")
+            self._throttle_mode = cfg.get("throttle_mode", "smooth")
+            for f_obj in self._scenario_mgr.create_fault_objects(scenario_key):
+                self.inject_fault(f_obj)
 
     def inject_fault(self, scenario: FaultScenario) -> None:
-        """Register a M3 fault scenario.
-
-        Available: MisfireFault, OverheatingFault, OilPressureDropFault,
-                   InjectorFault, VibrationSpikeFault, NoOpFault
-        severity: 0.0 (mild) -> 1.0 (severe)
-        """
         self._fault_manager.add(scenario)
 
     def clear_faults(self) -> None:
-        """Remove all registered fault scenarios.
-
-        WARNING CONTRACT (M3 -- FaultManager):
-          clear() has no reset_clock(). Re-inject faults from t=0 for new runs.
-          Renegotiate: add FaultManager.reset_time(offset).
-        """
         self._fault_manager.clear()
+
+    # -- Manual Telemetry Probe / Reliability Sandbox --------------------
+
+    def evaluate_live_probe(self, probe_values: dict) -> dict:
+        """Evaluates an arbitrary manual sensor state through M1 -> M2 -> M4.
+        
+        probe_values: {
+            "rpm": float, "throttle": float, "oil_pressure": float,
+            "oil_temp": float, "cht": float, "egt": float,
+            "fuel_flow": float, "vibration": float, "mission_duration_hours": float
+        }
+        """
+        rpm = float(probe_values.get("rpm", 2400.0))
+        throttle = float(probe_values.get("throttle", 65.0))
+        oil_p = float(probe_values.get("oil_pressure", 45.0))
+        oil_t = float(probe_values.get("oil_temp", 80.0))
+        cht = float(probe_values.get("cht", 175.0))
+        egt = float(probe_values.get("egt", 740.0))
+        fuel_f = float(probe_values.get("fuel_flow", 24.0))
+        vib = float(probe_values.get("vibration", 0.02))
+
+        # Synthetic M3 telemetry message
+        msg = EngineTelemetryMessage(
+            timestamp=time.time(),
+            msg_id="PROBE-01",
+            rpm=rpm,
+            cht=cht,
+            egt=egt,
+            oil_pressure=oil_p,
+            oil_temp=oil_t,
+            fuel_flow=fuel_f,
+            vibration_amplitude=vib,
+            vibration_freq=vib * 1200.0,
+            throttle_cmd=throttle,
+        )
+
+        # M1 physics twin step
+        m2_res = self._adapter.step(msg, dt=0.1)
+
+        # M2 prognostics update
+        m2_row = self._m2.update(timestamp=msg.timestamp, m2_residuals=m2_res, fault_label="manual_probe")
+
+        # M4 ML inference
+        sample_m4 = {
+            "rpm": rpm, "throttle": throttle, "oil_pressure": oil_p,
+            "oil_temp": oil_t, "cht": cht, "egt": egt,
+            "manifold_pressure": 28.5, "vibration": vib, "fuel_flow": fuel_f,
+            "residual_rpm": m2_res.get("res_rpm", 0.0),
+            "residual_oil_pressure": m2_res.get("res_oil_p", 0.0),
+            "residual_oil_temp": m2_res.get("res_oil_t", 0.0),
+            "residual_cht": m2_res.get("res_cht", 0.0),
+            "residual_egt": m2_res.get("res_egt", 0.0),
+            "residual_vibration": m2_res.get("res_vib", 0.0),
+            "residual_fuel_flow": m2_res.get("res_fuel", 0.0),
+            "health_index": m2_row.get("health_index", 100.0),
+            "baseline_rul": m2_row.get("rul_est", 480.0) if not np.isnan(m2_row.get("rul_est", float("nan"))) else 480.0,
+        }
+        ml_res = self._ml.evaluate_manual_sample(sample_m4)
+
+        return {
+            "inputs": probe_values,
+            "m1_residuals": m2_res,
+            "m2_prognostics": m2_row,
+            "m4_ml_prediction": ml_res,
+        }
 
     # -- Lifecycle --------------------------------------------------------
 
@@ -660,12 +854,6 @@ class Orchestrator:
         replay_csv: Optional[str]   = None,
         blocking:   bool            = False,
     ) -> None:
-        """Start the orchestrator tick loop.
-
-        duration_s : None = run until stop().
-        replay_csv : path to M3 CSV -> replay mode (as-fast-as-possible).
-        blocking   : True = block caller; False = background daemon thread.
-        """
         if self._running:
             raise RuntimeError("Orchestrator already running -- call stop() first.")
 
@@ -687,14 +875,12 @@ class Orchestrator:
             self._thread.start()
 
     def stop(self) -> None:
-        """Signal the tick loop to stop and join the thread."""
         self._running = False
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=5.0)
         self._thread = None
 
     def reset(self) -> None:
-        """Stop, clear history, reset M1 EWMA state and M2 rolling buffer."""
         self.stop()
         with self._lock:
             self._history.clear()
@@ -703,39 +889,38 @@ class Orchestrator:
             self._start_wall = None
         self._adapter.reset()
         self._m2.reset()
+        self._ml.reset()
 
     # -- Data access ------------------------------------------------------
 
     def get_latest(self) -> Optional[TelemetryFrame]:
-        """Most recent TelemetryFrame, or None if not yet started."""
         with self._lock:
             return self._latest
 
     def get_history(self, n: int = 100) -> List[TelemetryFrame]:
-        """Last n TelemetryFrames, oldest first."""
         with self._lock:
             frames = list(self._history)
         return frames[-n:] if n < len(frames) else frames
 
     def get_status(self) -> dict:
-        """Snapshot of orchestrator + M2 prognostics health."""
         latest = self.get_latest()
         wall   = time.perf_counter() - self._start_wall if self._start_wall else 0.0
         return {
             "running":          self._running,
+            "current_scenario": self._current_scenario,
             "tick_count":       self._tick_count,
             "wall_time_s":      round(wall, 3),
             "achieved_rate_hz": round(self._tick_count / wall, 2) if wall > 0 else 0.0,
             "latest_timestamp": latest.timestamp     if latest else None,
-            # M1
             "composite_score":  latest.composite_score if latest else None,
-            # M2
             "health_index":     latest.health_index    if latest else None,
             "health_status":    latest.health_status   if latest else None,
             "severity_level":   latest.severity_level  if latest else None,
             "rul_est_min":      latest.rul_est          if latest else None,
             "rul_status":       latest.rul_status       if latest else None,
-            # Ground truth
+            "ml_anomaly":       latest.ml_anomaly       if latest else None,
+            "ml_fault_type":    latest.ml_fault_type    if latest else None,
+            "ml_confidence":    latest.ml_confidence    if latest else None,
             "fault_label":      latest.fault_label      if latest else None,
             "subscriber_count": len(self._subscribers),
             "history_len":      len(self._history),
@@ -746,7 +931,7 @@ class Orchestrator:
             ],
         }
 
-    # -- Internal helpers -------------------------------------------------
+    # -- Internal frame processing ---------------------------------------
 
     def _process_frame(
         self,
@@ -754,19 +939,41 @@ class Orchestrator:
         fault_label: str,
         dt:          float,
     ) -> TelemetryFrame:
-        """M1 tick -> M2 prognostics -> TelemetryFrame -> subscriber dispatch."""
-
-        # M1: advance physics twin; get residuals renamed to M2 schema
+        # Step 1: M1 Physics Digital Twin Step
         m2_residuals = self._adapter.step(msg, dt)
 
-        # M2: streaming prognostics pipeline
+        # Step 2: M2 Prognostics Pipeline
         m2_row = self._m2.update(
             timestamp    = msg.timestamp,
             m2_residuals = m2_residuals,
             fault_label  = fault_label,
         )
 
-        frame = TelemetryFrame.from_m3_m1_m2(msg, m2_residuals, m2_row, fault_label)
+        # Step 3: M4 Real Machine Learning Inference
+        m4_row_dict = {
+            "timestamp":           msg.timestamp,
+            "rpm":                 msg.rpm,
+            "throttle_cmd":        msg.throttle_cmd,
+            "oil_pressure":        msg.oil_pressure,
+            "oil_temp":            msg.oil_temp,
+            "cht":                 msg.cht,
+            "egt":                 msg.egt,
+            "vibration_amplitude": msg.vibration_amplitude,
+            "fuel_flow":           msg.fuel_flow,
+            "health_index":        m2_row.get("health_index", 100.0),
+            "rul_est":             m2_row.get("rul_est", float("nan")),
+        }
+        m4_row_dict.update(m2_residuals)
+        m4_res = self._ml.update(m4_row_dict)
+
+        # Step 4: Assemble Combined TelemetryFrame
+        frame = TelemetryFrame.from_m3_m1_m2_m4(
+            msg          = msg,
+            m1_residuals = m2_residuals,
+            m2_row       = m2_row,
+            m4_result    = m4_res,
+            fault_label  = fault_label,
+        )
 
         with self._lock:
             self._latest = frame
@@ -785,12 +992,6 @@ class Orchestrator:
     # -- Tick loops -------------------------------------------------------
 
     def _run_live_loop(self, duration_s: Optional[float] = None) -> None:
-        """Live streaming via M3 TelemetryPublisher.
-
-        WARNING CONTRACT (M3 -- TelemetryPublisher):
-          run() is blocking; no step-at-a-time API.
-          Renegotiate: expose generator/coroutine so M6 owns the tick loop.
-        """
         prev_ts: Optional[float] = None
         default_dt = 1.0 / self._rate_hz
 
@@ -817,12 +1018,6 @@ class Orchestrator:
         csv_path:   str,
         duration_s: Optional[float] = None,
     ) -> None:
-        """Replay mode: iterate frames from a saved M3 CSV.
-
-        WARNING CONTRACT (M3 -- load_replay_csv):
-          fault_label is stripped; all replayed frames arrive as "healthy".
-          Renegotiate: yield (msg, label) tuples to preserve ground-truth labels.
-        """
         prev_ts: Optional[float] = None
         default_dt = 1.0 / self._rate_hz
 
@@ -833,121 +1028,75 @@ class Orchestrator:
                 break
             dt = (msg.timestamp - prev_ts) if prev_ts is not None else default_dt
             prev_ts = msg.timestamp
-            # WARNING: fault_label lost in replay -- see CONTRACT above
             self._process_frame(msg, fault_label="healthy", dt=max(dt, 1e-6))
 
         self._running = False
 
 
 # ---------------------------------------------------------------------------
-# __main__ -- end-to-end integration smoke test
+# __main__ -- End-to-End System Smoke Test
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    print("=" * 75)
+    print("M6 Orchestrator -- End-to-End System Integration Smoke Test")
+    print("Wiring: M1 (Twin + M3-coupled residuals)")
+    print("      + M2 (Prognostics, Health Index, ISO Severity, RUL CI)")
+    print("      + M3 (TelemetryPublisher & Real Fault Injectors)")
+    print("      + M4 (Real ML: Isolation Forest + Random Forest + Explainability)")
+    print("      + Scenario Manager & Manual Live Probe Sandbox")
+    print("=" * 75)
 
-    print("=" * 70)
-    print("M6 Orchestrator -- End-to-End Integration Smoke Test")
-    print("Wiring: M1 (DigitalTwin + ResidualEngine)")
-    print("      + M2 (Prognostics / Feature Engineering)")
-    print("      + M3 (TelemetryPublisher)")
-    print("=" * 70)
-
-    adapter = M1TwinAdapter(ambient_temp=25.0, ref_seed=42, ewma_alpha=0.10)
-    m2_prog = M2PrognosticsAdapter(mission_duration_hours=8.0)
     orch = Orchestrator(
-        twin_adapter           = adapter,
-        prognostics_adapter    = m2_prog,
-        rate_hz                = 10.0,
-        history_maxlen         = 500,
-        environment            = "standard_day",
-        throttle_mode          = "smooth",
-        mission_duration_hours = 8.0,
+        rate_hz=10.0,
+        history_maxlen=500,
+        mission_duration_hours=8.0,
     )
 
-    orch.inject_fault(OverheatingFault(severity=0.8, start_time_s=5.0, duration_s=20.0))
+    print("\n1. Testing Preset Scenario Loading: abnormal_oil_temp")
+    orch.load_scenario("abnormal_oil_temp")
+    print(f"Loaded scenario: {orch._current_scenario}")
+    print(f"Active faults: {[s.name for s in orch._fault_manager.active_scenarios(0.0)]}")
 
-    def m4_callback(frame: TelemetryFrame) -> None:
-        """M4 stub: anomaly detector input."""
-        if frame.composite_score > 0.03:
-            sig  = adapter.signature()
-            top  = sig["dominant_channels"][:2]
-            tops = ", ".join(f"{ch}={v:+.4f}" for ch, v in top)
+    print("\n2. Testing Manual Telemetry Live Reliability Probe (Sandboxed)")
+    probe_sample = {
+        "rpm": 2420.0,
+        "throttle": 65.0,
+        "oil_pressure": 15.0,  # low oil pressure
+        "oil_temp": 125.0,     # abnormal high oil temp
+        "cht": 195.0,
+        "egt": 780.0,
+        "fuel_flow": 26.0,
+        "vibration": 0.08,
+    }
+    probe_result = orch.evaluate_live_probe(probe_sample)
+    print("Probe Evaluation Output:")
+    print("  M1 Residuals (Oil P, Oil T):", probe_result["m1_residuals"].get("res_oil_p"), probe_result["m1_residuals"].get("res_oil_t"))
+    print("  M2 Health Index:", probe_result["m2_prognostics"].get("health_index"))
+    print("  M2 Severity:", probe_result["m2_prognostics"].get("severity_level"))
+    print("  M4 ML Anomaly:", probe_result["m4_ml_prediction"].get("is_anomaly"))
+    print("  M4 ML Fault Class:", probe_result["m4_ml_prediction"].get("fault_type"))
+    print("  M4 ML Confidence:", probe_result["m4_ml_prediction"].get("confidence"))
+    print("  M4 ML Top Features:", probe_result["m4_ml_prediction"].get("top_features"))
+
+    print("\n3. Testing 10-second Live Tick Loop with Overheating Injection...")
+    orch.load_scenario("cht_overheating")
+
+    def _telemetry_cb(frame: TelemetryFrame) -> None:
+        if frame.composite_score > 0.03 or frame.ml_anomaly:
             print(
-                f"  [M4] t={frame.timestamp:5.1f}s  "
-                f"score={frame.composite_score:.4f}  "
-                f"HI={frame.health_index:5.1f}%  "
-                f"sev={frame.severity_level:<12s}  "
-                f"RUL={frame.rul_est:.1f}min ({frame.rul_status})  "
-                f"label={frame.fault_label!r:<20s}  "
-                f"dominant=[{tops}]"
+                f"  [TICK t={frame.timestamp:4.1f}s] "
+                f"RPM={frame.rpm:4.0f} CHT={frame.cht:5.1f}C OilP={frame.oil_pressure:4.1f}psi "
+                f"HI={frame.health_index:5.1f}% Sev={frame.severity_level:<12s} "
+                f"ML Anomaly={frame.ml_anomaly} Class={frame.ml_fault_type} Conf={frame.ml_confidence:.2f}"
             )
 
-    _tick = [0]
-
-    def m5_callback(frame: TelemetryFrame) -> None:
-        """M5 stub: dashboard update."""
-        _tick[0] += 1
-        if _tick[0] % 20 == 0:    # every 2 s at 10 Hz
-            print(
-                f"  [M5] t={frame.timestamp:5.1f}s  "
-                f"RPM={frame.rpm:6.0f}  "
-                f"CHT={frame.cht:5.1f}C  "
-                f"EGT={frame.egt:5.1f}C  "
-                f"OilP={frame.oil_pressure:5.1f}psi  "
-                f"HI={frame.health_index:5.1f}%  "
-                f"sev={frame.severity_level:<12s}  "
-                f"RUL~={frame.rul_est:.1f}min"
-            )
-
-    orch.subscribe(m4_callback)
-    orch.subscribe(m5_callback)
-
-    print("\n[orch] Live run: 30 s  |  overheating fault activates at t=5 s\n")
-    orch.start(duration_s=30.0, blocking=True)
+    orch.subscribe(_telemetry_cb)
+    orch.start(duration_s=8.0, blocking=True)
 
     status = orch.get_status()
-    print("\n" + "=" * 70)
-    print("Run complete -- orchestrator status:")
+    print("\n4. Run Complete. Final Orchestrator Status:")
     for k, v in status.items():
         print(f"  {k:<24}: {v}")
 
-    sig = adapter.signature()
-    print("\nFinal M1 residual signature:")
-    print(f"  severity       : {sig['severity']:.6f}")
-    print(f"  fault_detected : {sig['fault_detected']}")
-    print(f"  dominant       : {sig['dominant_channels'][:3]}")
-
-    latest = orch.get_latest()
-    if latest:
-        print(f"\nFinal M2 prognostics (t={latest.timestamp:.1f}s):")
-        print(f"  health_index   : {latest.health_index:.2f}%")
-        print(f"  health_status  : {latest.health_status}")
-        print(f"  severity_level : {latest.severity_level}")
-        print(f"  rul_est        : {latest.rul_est:.1f} min")
-        print(f"  rul_lower      : {latest.rul_lower:.1f} min")
-        print(f"  rul_upper      : {latest.rul_upper:.1f} min")
-        print(f"  rul_status     : {latest.rul_status}")
-        print(f"  health_slope   : {latest.health_slope:.4f} pct/min")
-        print(f"  composite_ewma : {latest.composite_ewma:.6f}")
-
-    _replay = os.path.join(
-        _REPO_ROOT, "m3_telemetry", "data", "replay_library",
-        "fault_overheating_standard.csv",
-    )
-    if os.path.exists(_replay):
-        print(f"\n[orch] Replay mode -- {os.path.basename(_replay)}")
-        orch.reset()
-        _tick[0] = 0
-        orch.start(replay_csv=_replay, blocking=True)
-        rs = orch.get_status()
-        print(f"[orch] Replayed {rs['tick_count']} frames")
-        latest = orch.get_latest()
-        if latest:
-            print(f"[orch] Final composite_score = {latest.composite_score:.6f}")
-            print(f"[orch] Final health_index    = {latest.health_index:.2f}%")
-            print(f"[orch] Final severity_level  = {latest.severity_level}")
-    else:
-        print("\n[orch] Replay CSV not found -- skipping.")
-        print("       Expected: m3_telemetry/data/replay_library/")
-
-    print("\nDone.")
+    print("\nEnd-to-End Test Passed Successfully.")

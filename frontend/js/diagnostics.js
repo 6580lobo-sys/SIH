@@ -59,6 +59,26 @@ class DiagnosticsModule {
         label: 'Propeller Governor Overspeed Transient',
         text: 'Engine overspeed detected. Crankshaft RPM is spiking above maximum continuous rated speed (2,550 RPM). Constant speed propeller governor hunting.',
         action: 'Immediate throttle reduction command. Inspect hydraulic governor oil line and pitch counterweights.'
+      },
+      'abnormal_oil_temp': {
+        label: 'Abnormal Oil Temperature / Cooler Airflow Restriction',
+        text: 'Abnormal oil temperature detected. Lubricating oil thermal dissipation margin reduced by 34%. Measured oil temperature 126.5°C with elevated positive residual.',
+        action: 'Inspect oil cooler radiator face for debris, verify thermostat bypass valve operation, and check oil viscosity.'
+      },
+      'elevated_egt': {
+        label: 'Elevated Exhaust Gas Temp (EGT Thermal Runaway)',
+        text: 'Extreme EGT detected. Cylinder 3 exhaust temperature elevated to 824°C due to fuel trim divergence, delayed combustion, or lean flame speed.',
+        action: 'Inspect fuel injector solenoid harness, check spark plug electrode erosion, and balance intake manifold vacuum.'
+      },
+      'cht_overheating': {
+        label: 'Severe CHT Thermal Runaway',
+        text: 'Critical CHT thermal runaway detected. Cylinder Head Temperature exceeded 218°C. Ram-air cooling cowl duct seal failure suspected.',
+        action: 'Reduce power command, open cowl flap fully, initiate descent to cooler atmosphere, and prepare return to base.'
+      },
+      'compound_failure': {
+        label: 'Compound Multi-Subsystem Cascading Failure',
+        text: 'Catastrophic compound fault detected: Severe oil pressure loss (-3.37 bar) compounded with CHT thermal runaway (226°C) and bearing vibration (3.65g).',
+        action: 'IMMEDIATE FLIGHT ABORT & EMERGENCY RETURN TO BASE (RTB). Switch primary flight propulsion to remaining healthy engine.'
       }
     };
 

@@ -177,7 +177,7 @@ def replay_csv(csv_path: str,
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    from twin_core._dev_fault_stub import FaultedSimulator
+    from twin_core.m3_fault_source import FaultedSimulator
 
     DT = 0.1
     FAULT_TIME = 30.0

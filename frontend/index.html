@@ -67,12 +67,15 @@
           <select id="m3-fault-selector" class="fault-select">
             <option value="healthy">00. HEALTHY (NOMINAL)</option>
             <option value="misfire_or_injector_fault" selected>01. INJECTOR IMBALANCE (CYL 3)</option>
-            <option value="vibration_bearing_fault">02. BEARING VIBRATION (2.54x)</option>
-            <option value="oil_pressure_drop">03. OIL PRESSURE LOSS (-2.44 bar)</option>
-            <option value="overheating">04. THERMAL OVERHEATING</option>
-            <option value="fuel_mixture_drift">05. FUEL MIXTURE DRIFT</option>
-            <option value="cooling_system_fault">06. COOLING BAFFLE FAULT</option>
-            <option value="engine_overspeed">07. GOVERNOR OVERSPEED</option>
+            <option value="abnormal_oil_temp">02. ABNORMAL OIL TEMP (125°C)</option>
+            <option value="elevated_egt">03. ELEVATED EGT (820°C)</option>
+            <option value="cht_overheating">04. CHT OVERHEATING (220°C)</option>
+            <option value="oil_pressure_drop">05. OIL PRESSURE LOSS (-2.44 bar)</option>
+            <option value="vibration_bearing_fault">06. BEARING VIBRATION (3.8g)</option>
+            <option value="fuel_mixture_drift">07. FUEL MIXTURE DRIFT</option>
+            <option value="cooling_system_fault">08. COOLING BAFFLE FAULT</option>
+            <option value="engine_overspeed">09. GOVERNOR OVERSPEED</option>
+            <option value="compound_failure">10. COMPOUND MULTI-FAULT</option>
           </select>
         </div>
       </div>
@@ -1293,6 +1296,213 @@
             </div>
           </div>
 
+          <!-- ==========================================================
+               SCENARIO CONFIGURATION MANAGER (M3 DATA TO M4 ML ANALYSIS)
+               ========================================================== -->
+          <div class="eng-panel" style="margin-bottom: var(--space-md);">
+            <div class="sandbox-header">
+              <div>
+                <span class="eng-heading" style="margin-bottom: 2px;">SCENARIO CONFIGURATION MANAGER &bull; M3 TELEMETRY PRESETS</span>
+                <span class="eng-subheading">Switch between verified M3 operational and fault scenarios &bull; ML analyzes telemetry and calculates multi-class outcomes</span>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="eng-btn active" id="btn-open-save-config" style="font-size: 11px; padding: 4px 10px;">
+                  + SAVE CUSTOM CONFIG
+                </button>
+              </div>
+            </div>
+
+            <!-- Scenario Selection Chips -->
+            <div class="scenario-btn-group" id="scenario-chips-container" style="margin-top: 10px;">
+              <button class="scenario-chip" data-scenario="healthy">00. NOMINAL CRUISE (HEALTHY)</button>
+              <button class="scenario-chip fault-active active" data-scenario="misfire_or_injector_fault">01. INJECTOR IMBALANCE (CYL 3)</button>
+              <button class="scenario-chip fault-active" data-scenario="abnormal_oil_temp">02. ABNORMAL OIL TEMP (125°C)</button>
+              <button class="scenario-chip fault-active" data-scenario="elevated_egt">03. ELEVATED EGT (820°C)</button>
+              <button class="scenario-chip fault-active" data-scenario="cht_overheating">04. CHT OVERHEATING (220°C)</button>
+              <button class="scenario-chip critical-active" data-scenario="oil_pressure_drop">05. OIL PRESSURE LOSS (-2.44 BAR)</button>
+              <button class="scenario-chip fault-active" data-scenario="vibration_bearing_fault">06. BEARING VIBRATION (3.8G)</button>
+              <button class="scenario-chip fault-active" data-scenario="fuel_mixture_drift">07. FUEL MIXTURE LEAN DRIFT</button>
+              <button class="scenario-chip fault-active" data-scenario="cooling_system_fault">08. COOLING BAFFLE FAULT</button>
+              <button class="scenario-chip fault-active" data-scenario="engine_overspeed">09. GOVERNOR OVERSPEED</button>
+              <button class="scenario-chip critical-active" data-scenario="compound_failure">10. COMPOUND MULTI-FAULT</button>
+            </div>
+          </div>
+
+          <!-- ==========================================================
+               INTERACTIVE LIVE TELEMETRY PROBE & RELIABILITY SANDBOX
+               ========================================================== -->
+          <div class="sandbox-container">
+            <div class="sandbox-header">
+              <div>
+                <span class="eng-heading" style="margin-bottom: 2px;">INTERACTIVE LIVE TELEMETRY PROBE &bull; MODEL RELIABILITY SANDBOX</span>
+                <span class="eng-subheading">Manually inject arbitrary live sensor values to test and prove that the M4 ML model reliably detects anomalies and classifies failure modes</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button class="eng-btn" id="btn-probe-quick-nominal" style="font-size: 10.5px; padding: 3px 8px;">NOMINAL</button>
+                <button class="eng-btn" id="btn-probe-quick-oil" style="font-size: 10.5px; padding: 3px 8px; color: var(--amber-text);">LOW OIL PRESS</button>
+                <button class="eng-btn" id="btn-probe-quick-cht" style="font-size: 10.5px; padding: 3px 8px; color: var(--red-text);">HIGH CHT</button>
+                <button class="eng-btn" id="btn-probe-quick-egt" style="font-size: 10.5px; padding: 3px 8px; color: var(--amber-text);">ELEVATED EGT</button>
+                <button class="eng-btn" id="btn-probe-quick-vib" style="font-size: 10.5px; padding: 3px 8px; color: var(--purple-text);">VIB SURGE</button>
+              </div>
+            </div>
+
+            <!-- Probe Slider Grid -->
+            <div class="probe-grid">
+              <!-- Engine RPM -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">CRANKSHAFT SPEED</span>
+                  <span class="probe-val-display" id="disp-probe-rpm">2438 RPM</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-rpm" min="800" max="5800" step="20" value="2438">
+                <div class="probe-limits"><span>800 (IDLE)</span><span>2400 (CRUISE)</span><span>5800 (MAX)</span></div>
+              </div>
+
+              <!-- Throttle Command -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">THROTTLE COMMAND</span>
+                  <span class="probe-val-display" id="disp-probe-throttle">65.0 %</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-throttle" min="0" max="100" step="1" value="65">
+                <div class="probe-limits"><span>0% (IDLE)</span><span>65% (LOITER)</span><span>100% (WOT)</span></div>
+              </div>
+
+              <!-- Oil Temperature -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">OIL TEMPERATURE</span>
+                  <span class="probe-val-display" id="disp-probe-oil-temp">94.2 °C</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-oil-temp" min="30" max="160" step="0.5" value="94.2">
+                <div class="probe-limits"><span>30°C</span><span>95°C (NOMINAL)</span><span>160°C (DANGER)</span></div>
+              </div>
+
+              <!-- Oil Pressure -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">OIL GALLERY PRESSURE</span>
+                  <span class="probe-val-display" id="disp-probe-oil-press">4.82 bar</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-oil-press" min="0.5" max="8.0" step="0.05" value="4.82">
+                <div class="probe-limits"><span>0.5 bar</span><span>4.8 bar (NOMINAL)</span><span>8.0 bar</span></div>
+              </div>
+
+              <!-- CHT -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">CYLINDER HEAD TEMP (CHT)</span>
+                  <span class="probe-val-display" id="disp-probe-cht">167.4 °C</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-cht" min="80" max="280" step="1" value="167">
+                <div class="probe-limits"><span>80°C</span><span>165°C (NOMINAL)</span><span>280°C (OVERHEAT)</span></div>
+              </div>
+
+              <!-- EGT -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">EXHAUST GAS TEMP (EGT)</span>
+                  <span class="probe-val-display" id="disp-probe-egt">612.8 °C</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-egt" min="400" max="950" step="2" value="613">
+                <div class="probe-limits"><span>400°C</span><span>610°C (NOMINAL)</span><span>950°C (SURGE)</span></div>
+              </div>
+
+              <!-- Fuel Flow -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">FUEL CONSUMPTION RATE</span>
+                  <span class="probe-val-display" id="disp-probe-fuel">21.7 L/h</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-fuel" min="4" max="55" step="0.5" value="21.7">
+                <div class="probe-limits"><span>4 L/h</span><span>21.5 L/h</span><span>55 L/h</span></div>
+              </div>
+
+              <!-- Vibration Amplitude -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">ACCELEROMETER VIBRATION</span>
+                  <span class="probe-val-display" id="disp-probe-vib">0.84 g</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-vib" min="0.1" max="5.0" step="0.05" value="0.84">
+                <div class="probe-limits"><span>0.1 g</span><span>0.8 g (NOMINAL)</span><span>5.0 g (FATIGUE)</span></div>
+              </div>
+
+              <!-- Mission Duration Target -->
+              <div class="probe-slider-card">
+                <div class="probe-label-row">
+                  <span class="probe-name">MISSION TARGET DURATION</span>
+                  <span class="probe-val-display" id="disp-probe-duration">8.0 h</span>
+                </div>
+                <input type="range" class="probe-range-input" id="slider-probe-duration" min="1.0" max="16.0" step="0.5" value="8.0">
+                <div class="probe-limits"><span>1.0 h</span><span>8.0 h (STANDARD)</span><span>16.0 h (MAX)</span></div>
+              </div>
+            </div>
+
+            <!-- Action & Live Outcome Section -->
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px;">
+              <button class="eng-btn active" id="btn-evaluate-live-probe" style="padding: 7px 18px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em;">
+                ⚡ EVALUATE LIVE INFERENCE &amp; PROVE RELIABILITY
+              </button>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);" id="probe-run-timestamp">
+                Press to compute digital twin residuals, health index, RUL confidence interval, and ML multi-class inference.
+              </span>
+            </div>
+
+            <!-- Live Calculated Outcome Card -->
+            <div class="outcome-panel" id="probe-outcome-card">
+              <!-- Left: ML Anomaly & Classification Outcome -->
+              <div>
+                <span class="eng-heading" style="margin-bottom: 8px;">M4 MACHINE LEARNING MULTI-CLASS OUTCOME</span>
+                <div class="outcome-metric-row">
+                  <span>ISOLATION FOREST ANOMALY VERDICT:</span>
+                  <span class="outcome-badge normal" id="probe-out-verdict">NOMINAL (SAFE)</span>
+                </div>
+                <div class="outcome-metric-row">
+                  <span>ANOMALY SCORE (NORMALIZED):</span>
+                  <strong id="probe-out-anomaly-score">0.1248</strong>
+                </div>
+                <div class="outcome-metric-row">
+                  <span>PRIMARY PREDICTED CLASS:</span>
+                  <strong style="color: var(--blue-primary);" id="probe-out-class">HEALTHY</strong>
+                </div>
+                <div class="outcome-metric-row">
+                  <span>CLASSIFIER CONFIDENCE:</span>
+                  <strong id="probe-out-conf">94.8%</strong>
+                </div>
+                <div class="outcome-metric-row">
+                  <span>TOP CONTRIBUTING ATTRIBUTION:</span>
+                  <span id="probe-out-top-features" style="color: var(--text-secondary); font-size: 10.5px;">health_index, baseline_rul, fuel_flow_min_30s</span>
+                </div>
+              </div>
+
+              <!-- Right: Physics Residuals & RUL Prognostics -->
+              <div>
+                <span class="eng-heading" style="margin-bottom: 8px;">M1 PHYSICS &amp; M2 PROGNOSTIC OUTCOME</span>
+                <div class="outcome-metric-row">
+                  <span>M1 PHYSICS RESIDUAL DRIFT:</span>
+                  <strong id="probe-out-residuals">ΔCHT: +0.4°C | ΔOilP: +0.01 bar</strong>
+                </div>
+                <div class="outcome-metric-row">
+                  <span>CALCULATED HEALTH INDEX:</span>
+                  <strong style="color: var(--green-primary); font-size: 13px;" id="probe-out-hi">98.4 %</strong>
+                </div>
+                <div class="outcome-metric-row">
+                  <span>ISO-13381 SEVERITY LEVEL:</span>
+                  <span class="outcome-badge normal" id="probe-out-severity">NORMAL</span>
+                </div>
+                <div class="outcome-metric-row">
+                  <span>ESTIMATED RUL (POINT ESTIMATE):</span>
+                  <strong id="probe-out-rul">480.0 min (8.0 h)</strong>
+                </div>
+                <div class="outcome-metric-row">
+                  <span>95% CONFIDENCE INTERVAL BOUNDS:</span>
+                  <span id="probe-out-ci" style="font-size: 11px;">[442.0 min &mdash; 518.0 min]</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: var(--space-lg); margin-bottom: var(--space-lg);">
             <!-- Left: Model Metrics & Evaluation Report -->
             <div class="eng-panel">
@@ -1736,19 +1946,62 @@
             </div>
           </div>
         </div>
+    </div>
+
+    <!-- Custom Scenario Save Modal -->
+    <div class="drdo-modal-overlay" id="save-scenario-modal">
+      <div class="drdo-modal-window" style="width: 580px;">
+        <div class="drdo-modal-header">
+          <div>
+            <span class="eng-heading" style="margin-bottom: 2px;">SAVE CUSTOM SCENARIO CONFIGURATION</span>
+            <span class="eng-subheading">PERSIST M3 FAULT INJECTION &amp; FLIGHT PROFILE PARAMETERS</span>
+          </div>
+          <button class="eng-btn" id="btn-close-save-modal" style="padding: 2px 7px;">&times;</button>
+        </div>
+        <div class="drdo-modal-body" style="padding: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+              <label style="font-family: var(--font-mono); font-size: 11px; font-weight: 700;">SCENARIO NAME:</label>
+              <input type="text" id="input-scenario-name" class="eng-input" style="width: 100%; padding: 6px 10px; margin-top: 4px; font-family: var(--font-mono);" placeholder="e.g. High Altitude Cruise - Oil Pressure Anomaly">
+            </div>
+            <div>
+              <label style="font-family: var(--font-mono); font-size: 11px; font-weight: 700;">PRIMARY FAULT CLASSIFICATION:</label>
+              <select id="input-scenario-fault" class="fault-select" style="width: 100%; padding: 6px; margin-top: 4px;">
+                <option value="abnormal_oil_temp">Abnormal Oil Temp (125°C Thermal Degradation)</option>
+                <option value="elevated_egt">Elevated EGT (820°C Thermal Runaway)</option>
+                <option value="cht_overheating">Severe CHT Overheating (220°C)</option>
+                <option value="oil_pressure_drop">Oil Pressure Loss (-2.44 bar)</option>
+                <option value="vibration_bearing_fault">Bearing Vibration Anomaly (3.8g)</option>
+                <option value="fuel_mixture_drift">Fuel Mixture Lean Drift</option>
+                <option value="cooling_system_fault">Cooling System Baffle Fault</option>
+                <option value="engine_overspeed">Governor Overspeed Surge</option>
+                <option value="compound_failure">Compound Multi-Fault Breakdown</option>
+                <option value="healthy">Nominal Flight Baseline</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-family: var(--font-mono); font-size: 11px; font-weight: 700;">OPERATIONAL DESCRIPTION &amp; INTENT:</label>
+              <textarea id="input-scenario-desc" class="eng-input" style="width: 100%; height: 60px; padding: 6px 10px; margin-top: 4px; font-family: var(--font-mono); font-size: 11px;" placeholder="Describe flight conditions, atmospheric parameters, expected residual signature..."></textarea>
+            </div>
+          </div>
+          <div style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px;">
+            <button class="eng-btn" id="btn-cancel-save-scenario">CANCEL</button>
+            <button class="eng-btn active" id="btn-confirm-save-scenario">SAVE TO CONFIG MANAGER</button>
+          </div>
+        </div>
       </div>
     </div>
 
   </div>
 
   <!-- Scripts -->
-  <script src="js/charts.js"></script>
-  <script src="js/engine-visual.js"></script>
-  <script src="js/telemetry-engine.js"></script>
-  <script src="js/mission-replay.js"></script>
-  <script src="js/simulation.js"></script>
-  <script src="js/diagnostics.js"></script>
-  <script src="js/report-generator.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/charts.js?v=2.0"></script>
+  <script src="js/engine-visual.js?v=2.0"></script>
+  <script src="js/telemetry-engine.js?v=2.0"></script>
+  <script src="js/mission-replay.js?v=2.0"></script>
+  <script src="js/simulation.js?v=2.0"></script>
+  <script src="js/diagnostics.js?v=2.0"></script>
+  <script src="js/report-generator.js?v=2.0"></script>
+  <script src="js/app.js?v=2.0"></script>
 </body>
 </html>
