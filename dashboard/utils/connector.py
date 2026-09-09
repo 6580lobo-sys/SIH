@@ -37,8 +37,22 @@ Day 2 integration:
 
 from __future__ import annotations
 
+import os
+import sys
 import logging
 from typing import Optional, Protocol, runtime_checkable
+
+# Ensure M1 (twin_core), M2, and M3 are on sys.path
+_DASH_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_ROOT_DIR = os.path.dirname(_DASH_DIR)
+for _p in [
+    os.path.join(_ROOT_DIR, "M1", "src"),
+    os.path.join(_ROOT_DIR, "M2"),
+    os.path.join(_ROOT_DIR, "M3"),
+    os.path.join(_ROOT_DIR, "M4"),
+]:
+    if os.path.exists(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from utils.mock_data import MockEngine, FAULT_TYPES  # noqa: F401 (re-export)
 from utils.mock_rul import MockRULEstimator
@@ -153,14 +167,14 @@ class MockSource:
         return False
 
 
-# ── LiveSource (try-import twin_core, fallback to MockSource) ────────────────
+# ── LiveSource (M1 DigitalTwin + ResidualEngine) ────────────────────────────
 
-# Attempt to import M1's twin_core at module load time
 _TWIN_CORE_AVAILABLE = False
 try:
     from twin_core.twin import DigitalTwin          # type: ignore
     from twin_core.dynamics import EngineSimulator   # type: ignore
     from twin_core.residual import ResidualEngine    # type: ignore
+    from twin_core._dev_fault_stub import FaultedSimulator, FAULT_PROFILES  # type: ignore
     _TWIN_CORE_AVAILABLE = True
     log.info("twin_core found — LiveSource will use real M1 engine.")
 except ImportError:
@@ -169,32 +183,36 @@ except ImportError:
 
 class LiveSource:
     """
-    Live data source for M1's DigitalTwin + M3's streaming harness.
-
-    If twin_core is installed, constructs a real DigitalTwin + ResidualEngine
-    and delegates all 3 M1 methods to them. Otherwise, falls back to MockSource
-    seamlessly — no page code changes needed.
-
-    RUL and Classification always use mock modules until M2/M4 provide real ones.
+    Live data source connecting directly to M1's DigitalTwin + ResidualEngine.
     """
 
     def __init__(self, noise_sigma: float = 0.015, scenario_params: dict = None, **kwargs):
         self._using_real = False
         self._rul_estimator = MockRULEstimator()
         self._classifier = MockClassifier()
+        self._tick_count = 0
+        self._last_raw: tuple[dict, dict] = ({}, {})
+        self._active_fault: Optional[str] = None
+        self._ambient_temp = 25.0
+        self._throttle = 65.0
+
+        if scenario_params:
+            self._ambient_temp = float(scenario_params.get("ambient_temp_c", 25.0))
+            self._throttle = float(scenario_params.get("throttle_demand_pct", 65.0))
 
         if _TWIN_CORE_AVAILABLE:
             try:
+                self._actual_sim = EngineSimulator(ambient_temp=self._ambient_temp, seed=99)
                 self._twin = DigitalTwin(
-                    reference=EngineSimulator(),
-                    actual=EngineSimulator(),
+                    actual_source=self._actual_sim.step,
+                    ambient_temp=self._ambient_temp,
+                    ref_seed=42,
                 )
-                self._residual = ResidualEngine(self._twin)
+                self._residual = ResidualEngine()
                 self._using_real = True
                 log.info("LiveSource: Real M1 twin_core engine activated.")
             except Exception as e:
-                log.warning(f"LiveSource: twin_core import OK but init failed: {e}. "
-                            f"Falling back to MockSource.")
+                log.warning(f"LiveSource: twin_core init error: {e}. Falling back to MockSource.")
                 self._fallback = MockSource(noise_sigma=noise_sigma,
                                             scenario_params=scenario_params, **kwargs)
         else:
@@ -203,52 +221,51 @@ class LiveSource:
 
     def next_tick(self) -> dict:
         if self._using_real:
-            return self._residual.next_tick()
+            self._tick_count += 1
+            dt = 0.1
+            pair = self._twin.step(self._throttle, dt)
+            self._last_raw = (pair["predicted"], pair["actual"])
+            res = self._residual.update(pair)
+            return res
         return self._fallback.next_tick()
 
     def get_signature(self) -> Optional[dict]:
         if self._using_real:
-            return self._residual.get_signature()
+            return self._residual.signature()
         return self._fallback.get_signature()
 
     def get_raw(self) -> tuple[dict, dict]:
         if self._using_real:
-            return self._twin.get_raw()
+            return self._last_raw
         return self._fallback.get_raw()
 
     def get_rul(self, composite_score: float) -> Optional[dict]:
-        # Always mock until M2/M3 provide a real module
         return self._rul_estimator.estimate(composite_score)
 
     def get_classification(self, signature: Optional[dict]) -> Optional[dict]:
-        # Always mock until M3/M4 provide a real module
-        active = None
-        if self._using_real:
-            # Real twin doesn't expose active_fault the same way
-            active = None
-        else:
-            active = self._fallback.active_fault
         return self._classifier.classify(
             signature=signature,
-            active_fault=active,
+            active_fault=self.active_fault,
         )
 
     def inject_fault(self, fault_type: str) -> None:
+        self._active_fault = fault_type
         if self._using_real:
-            # When real: inject via the twin's actual source (M2's injector)
-            try:
-                self._twin.actual_source.inject_fault(fault_type)
-            except AttributeError:
-                log.warning("LiveSource: real actual_source doesn't support inject_fault.")
+            if fault_type in FAULT_PROFILES:
+                faulted = FaultedSimulator(fault_type=fault_type, fault_time=0.0, seed=99)
+                self._twin.set_actual_source(faulted.step)
+            else:
+                self._actual_sim = EngineSimulator(ambient_temp=self._ambient_temp, seed=99)
+                self._twin.set_actual_source(self._actual_sim.step)
         else:
             self._fallback.inject_fault(fault_type)
 
     def clear_fault(self) -> None:
+        self._active_fault = None
         if self._using_real:
-            try:
-                self._twin.actual_source.clear_fault()
-            except AttributeError:
-                pass
+            self._actual_sim = EngineSimulator(ambient_temp=self._ambient_temp, seed=99)
+            self._twin.set_actual_source(self._actual_sim.step)
+            self._residual.reset()
         else:
             self._fallback.clear_fault()
         self._classifier.reset()
@@ -257,24 +274,19 @@ class LiveSource:
     @property
     def active_fault(self) -> Optional[str]:
         if self._using_real:
-            try:
-                return self._twin.actual_source.active_fault
-            except AttributeError:
-                return None
+            return self._active_fault
         return self._fallback.active_fault
 
     @property
     def tick_count(self) -> int:
         if self._using_real:
-            try:
-                return self._residual.tick_count
-            except AttributeError:
-                return 0
+            return self._tick_count
         return self._fallback.tick_count
 
     @property
     def using_real_m1(self) -> bool:
         return self._using_real
+
 
 
 # ── ReplaySource (try-import CsvReplaySource, fallback to MockSource) ────────

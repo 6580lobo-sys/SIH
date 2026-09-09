@@ -76,6 +76,7 @@ html, body, [class*="css"] {
 #MainMenu { visibility: hidden; }
 footer    { visibility: hidden; }
 header    { visibility: hidden; }
+[data-testid="stSidebarNav"] { display: none !important; }
 
 /* ── Main content area ─────────────────────────────────────────────────── */
 .block-container {
@@ -948,6 +949,8 @@ hr {
 """
 
 
+import textwrap
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  PYTHON HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -972,56 +975,32 @@ def inject_global_styles():
 def render_sidebar_nav(active: str = "overview"):
     """
     Render the styled mission-control sidebar nav.
-    active: one of 'overview','digital_twin','telemetry','diagnostics',
-                   'simulation','reports','settings'
     """
-    # Logo block
-    st.markdown("""
-    <div class="sidebar-logo">
-        <span class="logo-icon">✈️</span>
-        <div class="logo-name">UAV ENGINE TWIN</div>
-        <div class="logo-tagline">PREDICT · PREVENT · KEEP FLYING</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(textwrap.dedent("""
+<div class="sidebar-logo">
+    <span class="logo-icon">✈️</span>
+    <div class="logo-name">UAV ENGINE TWIN</div>
+    <div class="logo-tagline">PREDICT · PREVENT · KEEP FLYING</div>
+</div>
+<div class="nav-group-label">Navigation</div>
+"""), unsafe_allow_html=True)
 
-    st.markdown('<div class="nav-group-label">Navigation</div>', unsafe_allow_html=True)
-
-    for icon, label, page_file, key in _NAV_ITEMS:
-        is_active = key == active
-        css_cls = "nav-item active" if is_active else "nav-item"
-        # Use st.page_link for routing; style is applied via CSS class on the wrapper
-        # We render a visual item then the page_link below it
-        col = st.container()
-        with col:
-            st.markdown(f"""
-            <div class="{css_cls}">
-                <span class="nav-icon">{icon}</span>
-                <span>{label}</span>
-            </div>
-            """, unsafe_allow_html=True)
-
-    st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
-    st.markdown("---", unsafe_allow_html=False)
-
-    # Actual clickable links (Streamlit native, unstyled but functional)
-    st.markdown('<div class="nav-group-label">Quick Links</div>', unsafe_allow_html=True)
     for icon, label, page_file, key in _NAV_ITEMS:
         try:
-            st.page_link(page_file, label=f"{icon} {label}")
+            st.page_link(page_file, label=f"{icon}  {label}")
         except Exception:
             pass
 
-    # Footer
-    st.markdown("""
-    <div style="margin-top:20px; padding: 12px 0 0 0; border-top: 1px solid rgba(59,130,246,0.12);">
-        <div style="font-size:0.65rem; font-weight:700; color:#2d3e55; letter-spacing:0.12em; text-transform:uppercase;">
-            DRDO | SIH26054
-        </div>
-        <div style="font-size:0.6rem; color:#1e2d40; margin-top:3px; letter-spacing:0.05em;">
-            UAV Engine Health Monitoring
-        </div>
+    st.markdown(textwrap.dedent("""
+<div style="margin-top:24px; padding: 12px 10px 0 10px; border-top: 1px solid rgba(59,130,246,0.12);">
+    <div style="font-size:0.65rem; font-weight:700; color:#4b5e7a; letter-spacing:0.12em; text-transform:uppercase;">
+        DRDO | SIH26054
     </div>
-    """, unsafe_allow_html=True)
+    <div style="font-size:0.6rem; color:#2d3e55; margin-top:3px; letter-spacing:0.05em;">
+        UAV Engine Health Monitoring
+    </div>
+</div>
+"""), unsafe_allow_html=True)
 
 
 def render_mission_header(mode: str = "Live", mission_id: str = "ISR-042",
@@ -1034,44 +1013,40 @@ def render_mission_header(mode: str = "Live", mission_id: str = "ISR-042",
     mission_id_safe = mission_id.upper().replace(" ", "-")
 
     if mode == "Live":
-        mode_html = """
-        <div class="live-pill">
-            <div class="live-dot"></div>
-            LIVE
-        </div>"""
+        mode_html = '<div class="live-pill"><div class="live-dot"></div>LIVE</div>'
     else:
         mode_html = '<div class="replay-pill">⏵ REPLAY</div>'
 
     notif_dot = '<div class="notif-dot"></div>' if has_alerts else ""
 
-    st.markdown(f"""
-    <div class="mission-header">
-        <div class="header-left">
-            <span style="font-size:1.6rem;">✈️</span>
-            <div>
-                <div class="header-logo-text">UAV ENGINE TWIN</div>
-                <div class="header-tagline">PREDICT &nbsp;|&nbsp; PREVENT &nbsp;|&nbsp; KEEP FLYING</div>
-            </div>
-        </div>
-        <div class="header-right">
-            <div class="mission-id-badge">MISSION: {mission_id_safe}</div>
-            {mode_html}
-            <div class="utc-clock">🕐 {now_utc}</div>
-            <div class="header-bell">🔔{notif_dot}</div>
-            <div class="header-avatar">MC</div>
+    header_html = f"""<div class="mission-header">
+    <div class="header-left">
+        <span style="font-size:1.6rem;">✈️</span>
+        <div>
+            <div class="header-logo-text">UAV ENGINE TWIN</div>
+            <div class="header-tagline">PREDICT &nbsp;|&nbsp; PREVENT &nbsp;|&nbsp; KEEP FLYING</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="header-right">
+        <div class="mission-id-badge">MISSION: {mission_id_safe}</div>
+        {mode_html}
+        <div class="utc-clock">🕐 {now_utc}</div>
+        <div class="header-bell">🔔{notif_dot}</div>
+        <div class="header-avatar">MC</div>
+    </div>
+</div>"""
+
+    st.markdown(textwrap.dedent(header_html), unsafe_allow_html=True)
 
 
 def render_page_title(title: str, subtitle: str = ""):
     """Render the page title + subtitle."""
-    st.markdown(f"""
-    <div style="margin-bottom: 20px;">
-        <div class="page-title">{title}</div>
-        {"" if not subtitle else f'<div class="page-subtitle">{subtitle}</div>'}
-    </div>
-    """, unsafe_allow_html=True)
+    sub_html = f'<div class="page-subtitle">{subtitle}</div>' if subtitle else ""
+    html = f"""<div style="margin-bottom: 20px;">
+    <div class="page-title">{title}</div>
+    {sub_html}
+</div>"""
+    st.markdown(textwrap.dedent(html), unsafe_allow_html=True)
 
 
 def section_title(text: str):
@@ -1113,3 +1088,4 @@ def severity_pill_html(severity: float) -> str:
 def render_header(uav_id: str, mission_name: str, mode: str):
     """Legacy shim — replaced by render_mission_header."""
     render_mission_header(mode=mode, mission_id=mission_name or "ISR-042")
+

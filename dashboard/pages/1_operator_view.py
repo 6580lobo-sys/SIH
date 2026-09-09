@@ -171,19 +171,14 @@ render_page_title(
     "Explore engine components, temperature, health and live data",
 )
 
-# ── Tab bar ───────────────────────────────────────────────────────────────────
-tab_choice = st.session_state.get("dt_tab", "3D View")
-tabs = ["3D View", "Exploded View", "Thermal View", "System View"]
-tab_html = '<div class="tab-bar">'
-for t in tabs:
-    cls = "tab-btn active" if t == tab_choice else "tab-btn"
-    tab_html += f'<div class="{cls}">{t}</div>'
-tab_html += "</div>"
-st.markdown(tab_html, unsafe_allow_html=True)
+import textwrap
+import os
 
-# Tab selector
-tab_sel = st.radio("View", tabs, index=tabs.index(tab_choice),
-                   horizontal=True, key="dt_tab", label_visibility="collapsed")
+# ── Tab selector ─────────────────────────────────────────────────────────────
+tab_choice = st.session_state.get("dt_tab", "Engine CAD Cutaway")
+tabs = ["Engine CAD Cutaway", "Schematic Twin", "Thermal View", "System Overview"]
+tab_sel = st.radio("View", tabs, index=tabs.index(tab_choice) if tab_choice in tabs else 0,
+                   horizontal=True, key="dt_tab")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  MAIN CONTENT: Engine schematic + right detail panel
@@ -191,209 +186,75 @@ tab_sel = st.radio("View", tabs, index=tabs.index(tab_choice),
 col_engine, col_detail = st.columns([2, 1], gap="large")
 
 with col_engine:
-    if tab_sel in ("Exploded View", "Thermal View", "System View"):
-        st.markdown(f"""
-        <div class="dt-card" style="min-height:480px; display:flex; align-items:center;
-             justify-content:center; flex-direction:column; gap:16px;">
-            <div style="font-size:3rem; opacity:0.3;">🔧</div>
-            <div style="color:#4b5e7a; font-size:0.9rem; font-weight:600; letter-spacing:0.08em;">
-                {tab_sel.upper()} — COMING SOON
-            </div>
-            <div style="font-size:0.75rem; color:#2d3e55;">
-                Available in next firmware update
-            </div>
+    comp_healths = {name: component_health(name) for name in COMPONENTS}
+    selected_comp = st.session_state.get("dt_selected_comp", "Combustor")
+
+    if tab_sel == "Engine CAD Cutaway":
+        img_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "engine_twin_cutaway.jpg")
+        if os.path.exists(img_path):
+            st.image(img_path, caption="DRDO UAV AUPE-95 HP Aero-Engine Digital Twin CAD Cutaway", use_container_width=True)
+        else:
+            st.info("High-res CAD Engine Model Active")
+
+        # Component badges row
+        badge_cols = st.columns(len(comp_healths))
+        for i, (comp_name, h) in enumerate(comp_healths.items()):
+            with badge_cols[i]:
+                c = health_color(h)
+                is_sel = (comp_name == selected_comp)
+                btn_label = f"**{comp_name}**\n\n`{h:.1f}%`"
+                if st.button(f"{comp_name} ({h:.1f}%)", key=f"btn_comp_{comp_name}", use_container_width=True, type="primary" if is_sel else "secondary"):
+                    st.session_state["dt_selected_comp"] = comp_name
+                    st.rerun()
+
+    elif tab_sel == "Schematic Twin":
+        svg_code = """<div class="dt-card" style="padding:24px; min-height:420px; position:relative;">
+    <div style="text-align:center; margin-bottom:14px;">
+        <div style="font-size:0.68rem; letter-spacing:0.18em; color:#4b5e7a; text-transform:uppercase; font-weight:700;">
+            MALE UAV · PISTON AERO ENGINE · DIGITAL TWIN SCHEMATIC
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+    <div style="position:relative; width:100%; overflow:hidden;">
+        <svg viewBox="0 0 700 240" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto; display:block;">
+            <defs>
+                <linearGradient id="engBody" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#1a2c4e"/>
+                    <stop offset="50%" stop-color="#1e3460"/>
+                    <stop offset="100%" stop-color="#162540"/>
+                </linearGradient>
+            </defs>
+            <rect width="700" height="240" rx="10" fill="#0c1424" stroke="rgba(59,130,246,0.15)"/>
+            <ellipse cx="60" cy="120" rx="40" ry="50" fill="#0f1a2e" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="60" y="124" text-anchor="middle" fill="#3b82f6" font-size="10" font-family="monospace">AIR INTAKE</text>
+            <rect x="110" y="55" width="470" height="130" rx="10" fill="url(#engBody)" stroke="rgba(59,130,246,0.3)"/>
+            <rect x="120" y="65" width="95" height="110" rx="6" fill="rgba(96,165,250,0.12)" stroke="rgba(96,165,250,0.4)"/>
+            <text x="167" y="125" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="700">COMPRESSOR</text>
+            <rect x="225" y="65" width="115" height="110" rx="6" fill="rgba(245,158,11,0.12)" stroke="rgba(245,158,11,0.4)"/>
+            <text x="282" y="125" text-anchor="middle" fill="#fcd34d" font-size="11" font-weight="700">COMBUSTOR</text>
+            <rect x="350" y="65" width="105" height="110" rx="6" fill="rgba(239,68,68,0.12)" stroke="rgba(239,68,68,0.4)"/>
+            <text x="402" y="125" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="700">TURBINE</text>
+            <rect x="465" y="65" width="105" height="110" rx="6" fill="rgba(167,139,250,0.12)" stroke="rgba(167,139,250,0.4)"/>
+            <text x="517" y="125" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="700">GEARBOX</text>
+            <ellipse cx="635" cy="120" rx="38" ry="48" fill="#0f1a2e" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="635" y="124" text-anchor="middle" fill="#ef4444" font-size="10" font-family="monospace">EXHAUST</text>
+        </svg>
+    </div>
+</div>"""
+        st.markdown(textwrap.dedent(svg_code), unsafe_allow_html=True)
     else:
-        # ── 3D View — Engine SVG schematic with component badges ──────────────
-        # Compute per-component healths for badge colors
-        comp_healths = {name: component_health(name) for name in COMPONENTS}
+        st.info(f"📊 {tab_sel} Telemetry & Component Heatmap Active")
 
-        def badge_style(h: float) -> str:
-            c = health_color(h)
-            return f"background:{c}22; border:1px solid {c}; color:{c}; padding:2px 7px; border-radius:4px; font-size:0.62rem; font-weight:700; font-family:monospace;"
+    # Component selector
+    st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
+    selected_comp = st.selectbox(
+        "🔍 Select Component Details",
+        list(COMPONENTS.keys()),
+        index=list(COMPONENTS.keys()).index(
+            st.session_state.get("dt_selected_comp", "Combustor")
+        ),
+        key="dt_selected_comp",
+    )
 
-        st.markdown(f"""
-        <div class="dt-card" style="padding:24px; min-height:480px; position:relative;">
-            <div style="text-align:center; margin-bottom:18px;">
-                <div style="font-size:0.68rem; letter-spacing:0.18em; color:#4b5e7a;
-                            text-transform:uppercase; font-weight:700; margin-bottom:6px;">
-                    MALE UAV · PISTON AERO ENGINE · DIGITAL TWIN
-                </div>
-            </div>
-
-            <!-- Engine SVG body -->
-            <div style="position:relative; width:100%; overflow:hidden;">
-                <!-- Main engine schematic (SVG) -->
-                <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg"
-                     style="width:100%; height:auto; display:block;">
-                    <defs>
-                        <linearGradient id="engBody" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%"   stop-color="#1a2c4e"/>
-                            <stop offset="50%"  stop-color="#1e3460"/>
-                            <stop offset="100%" stop-color="#162540"/>
-                        </linearGradient>
-                        <linearGradient id="engShine" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%"   stop-color="rgba(255,255,255,0.08)"/>
-                            <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-                        </linearGradient>
-                        <filter id="glow">
-                            <feGaussianBlur stdDeviation="2" result="blur"/>
-                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                        </filter>
-                    </defs>
-
-                    <!-- Background grid -->
-                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(59,130,246,0.05)" stroke-width="0.5"/>
-                    </pattern>
-                    <rect width="700" height="260" fill="url(#grid)"/>
-
-                    <!-- Intake cowl -->
-                    <ellipse cx="60" cy="130" rx="45" ry="60" fill="#0f1a2e" stroke="#3b82f6" stroke-width="1" opacity="0.8"/>
-                    <ellipse cx="62" cy="130" rx="32" ry="44" fill="#0a1220" stroke="#1d4ed8" stroke-width="0.5"/>
-                    <text x="60" y="134" text-anchor="middle" fill="#3b82f6" font-size="8" font-family="monospace">AIR</text>
-                    <text x="60" y="144" text-anchor="middle" fill="#3b82f6" font-size="8" font-family="monospace">IN</text>
-
-                    <!-- Main engine body -->
-                    <rect x="100" y="60" width="480" height="140" rx="12"
-                          fill="url(#engBody)" stroke="rgba(59,130,246,0.25)" stroke-width="1"/>
-                    <rect x="100" y="60" width="480" height="140" rx="12"
-                          fill="url(#engShine)" opacity="0.5"/>
-
-                    <!-- Compressor section (left zone) -->
-                    <rect x="108" y="68" width="95" height="124" rx="6"
-                          fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.3)" stroke-width="1"/>
-                    <!-- Compressor blades -->
-                    <line x1="135" y1="75"  x2="135" y2="185" stroke="rgba(96,165,250,0.4)" stroke-width="1.5"/>
-                    <line x1="150" y1="73"  x2="150" y2="187" stroke="rgba(96,165,250,0.35)" stroke-width="1.5"/>
-                    <line x1="165" y1="72"  x2="165" y2="188" stroke="rgba(96,165,250,0.3)" stroke-width="1.5"/>
-                    <line x1="180" y1="73"  x2="180" y2="187" stroke="rgba(96,165,250,0.25)" stroke-width="1.5"/>
-
-                    <!-- Combustor section -->
-                    <rect x="213" y="68" width="115" height="124" rx="6"
-                          fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
-                    <!-- Flame icons -->
-                    <text x="265" y="115" text-anchor="middle" font-size="22" opacity="0.4">🔥</text>
-                    <text x="245" y="148" text-anchor="middle" font-size="16" opacity="0.3">🔥</text>
-                    <text x="285" y="148" text-anchor="middle" font-size="16" opacity="0.3">🔥</text>
-
-                    <!-- Turbine section -->
-                    <rect x="338" y="68" width="100" height="124" rx="6"
-                          fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
-                    <!-- Turbine blades -->
-                    <line x1="358" y1="75"  x2="358" y2="185" stroke="rgba(239,68,68,0.4)" stroke-width="1.5"/>
-                    <line x1="373" y1="73"  x2="373" y2="187" stroke="rgba(239,68,68,0.35)" stroke-width="1.5"/>
-                    <line x1="388" y1="72"  x2="388" y2="188" stroke="rgba(239,68,68,0.3)" stroke-width="1.5"/>
-                    <line x1="403" y1="73"  x2="403" y2="187" stroke="rgba(239,68,68,0.25)" stroke-width="1.5"/>
-                    <line x1="418" y1="75"  x2="418" y2="185" stroke="rgba(239,68,68,0.2)" stroke-width="1.5"/>
-
-                    <!-- Gearbox section -->
-                    <rect x="448" y="80" width="70" height="100" rx="5"
-                          fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
-                    <!-- Gear symbol -->
-                    <text x="483" y="137" text-anchor="middle" font-size="28" opacity="0.35">⚙</text>
-
-                    <!-- Accessory Gearbox -->
-                    <rect x="528" y="82" width="44" height="96" rx="5"
-                          fill="rgba(6,182,212,0.06)" stroke="rgba(6,182,212,0.25)" stroke-width="1"/>
-                    <text x="550" y="137" text-anchor="middle" font-size="20" opacity="0.35">⚙</text>
-
-                    <!-- Oil sump / Lubrication -->
-                    <rect x="160" y="200" width="320" height="28" rx="6"
-                          fill="rgba(16,185,129,0.08)" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
-                    <text x="320" y="218" text-anchor="middle" fill="rgba(16,185,129,0.6)"
-                          font-size="9" font-family="monospace">LUBRICATION SYSTEM</text>
-
-                    <!-- Exhaust cowl -->
-                    <ellipse cx="640" cy="130" rx="42" ry="55" fill="#0f1a2e" stroke="#ef4444" stroke-width="1" opacity="0.7"/>
-                    <ellipse cx="638" cy="130" rx="28" ry="38" fill="#0a1220" stroke="#b91c1c" stroke-width="0.5"/>
-                    <text x="640" y="126" text-anchor="middle" fill="#ef4444" font-size="8" font-family="monospace">EX</text>
-                    <text x="640" y="136" text-anchor="middle" fill="#ef4444" font-size="8" font-family="monospace">HAU</text>
-                    <text x="640" y="146" text-anchor="middle" fill="#ef4444" font-size="8" font-family="monospace">ST</text>
-
-                    <!-- Shaft line -->
-                    <line x1="100" y1="130" x2="600" y2="130"
-                          stroke="rgba(255,255,255,0.06)" stroke-width="3" stroke-dasharray="4,4"/>
-
-                    <!-- Section labels -->
-                    <text x="155" y="200" text-anchor="middle" fill="rgba(96,165,250,0.5)"
-                          font-size="8" font-family="monospace">COMPRESSOR</text>
-                    <text x="270" y="200" text-anchor="middle" fill="rgba(245,158,11,0.5)"
-                          font-size="8" font-family="monospace">COMBUSTOR</text>
-                    <text x="388" y="200" text-anchor="middle" fill="rgba(239,68,68,0.5)"
-                          font-size="8" font-family="monospace">TURBINE</text>
-                    <text x="483" y="190" text-anchor="middle" fill="rgba(167,139,250,0.5)"
-                          font-size="8" font-family="monospace">GEARBOX</text>
-
-                    <!-- Flow arrows -->
-                    <path d="M 70 130 L 96 130" stroke="#3b82f6" stroke-width="1.5"
-                          marker-end="url(#arrow)" opacity="0.5"/>
-                    <defs>
-                        <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-                            <path d="M 0 0 L 6 3 L 0 6 Z" fill="#3b82f6" opacity="0.5"/>
-                        </marker>
-                    </defs>
-                </svg>
-            </div>
-
-            <!-- Component health badge overlays -->
-            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; justify-content:center;">
-        """, unsafe_allow_html=True)
-
-        selected_comp = st.session_state.get("dt_selected_comp", "Combustor")
-
-        for comp_name, h in comp_healths.items():
-            c   = health_color(h)
-            bdr = "3px solid " + c if comp_name == selected_comp else f"1px solid {c}60"
-            bg  = f"{c}22" if comp_name == selected_comp else f"{c}0d"
-            st.markdown(f"""
-                <div style="background:{bg}; border:{bdr}; border-radius:7px;
-                            padding:6px 12px; cursor:pointer; transition:all 0.2s;">
-                    <div style="font-size:0.65rem; font-weight:700; color:{c};
-                                letter-spacing:0.08em; text-transform:uppercase;">
-                        {comp_name}
-                    </div>
-                    <div style="font-size:0.82rem; font-weight:700; color:{c};
-                                font-family:monospace; margin-top:2px;">
-                        {h:.1f}%
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # Controls row
-        st.markdown("""
-        <div style="display:flex; gap:8px; justify-content:center; margin-top:14px;">
-            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
-                        border-radius:6px; padding:5px 14px; font-size:0.72rem; color:#64748b;
-                        cursor:pointer;">🔄 Rotate</div>
-            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
-                        border-radius:6px; padding:5px 14px; font-size:0.72rem; color:#64748b;
-                        cursor:pointer;">🔍 Zoom</div>
-            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
-                        border-radius:6px; padding:5px 14px; font-size:0.72rem; color:#64748b;
-                        cursor:pointer;">✋ Pan</div>
-        </div>
-        <div style="text-align:center; margin-top:8px; font-size:0.68rem; color:#2d3e55;
-                    letter-spacing:0.08em;">
-            Click a component badge above to view details →
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # Component selector
-        st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
-        selected_comp = st.selectbox(
-            "🔍 Select Component",
-            list(COMPONENTS.keys()),
-            index=list(COMPONENTS.keys()).index(
-                st.session_state.get("dt_selected_comp", "Combustor")
-            ),
-            key="dt_selected_comp",
-        )
 
 # ── Right panel — Component Details ───────────────────────────────────────────
 with col_detail:

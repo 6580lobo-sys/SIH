@@ -110,6 +110,9 @@ render_page_title(
     "Live engine status, health, RUL and key insights at a glance",
 )
 
+import textwrap
+import os
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  ROW 1 — Hero card  |  Engine Health  |  RUL
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -126,53 +129,48 @@ with col_hero:
     airspeed_v = 145  - (composite * 20)
     env_temp_v = 22   + (composite * 8)
 
-    st.markdown(f"""
-    <div class="uav-hero-card">
-        <div class="scan-line"></div>
+    drone_img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "uav_tapas_drone.jpg")
+    if os.path.exists(drone_img_path):
+        st.image(drone_img_path, caption="TAPAS-BH-201 MALE UAV · Reconnaissance Mission ISR-042", use_container_width=True)
 
-        <div style="display:flex; align-items:flex-start; gap:20px;">
-            <!-- UAV silhouette -->
-            <div style="font-size:5rem; line-height:1; filter: drop-shadow(0 0 20px rgba(59,130,246,0.5));">
-                ✈️
+    hero_html = f"""<div class="uav-hero-card">
+    <div class="scan-line"></div>
+    <div style="display:flex; align-items:flex-start; gap:16px;">
+        <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:1.5rem; font-weight:900; color:#f1f5f9; font-family:'JetBrains Mono',monospace;">
+                    DRDO TAPAS-BH-201
+                </div>
+                <span class="in-mission-pill">● IN MISSION</span>
             </div>
-            <div style="flex:1;">
-                <div style="font-size:1.6rem; font-weight:900; color:#f1f5f9;
-                            letter-spacing:0.04em; font-family:'JetBrains Mono',monospace;">
-                    UAV-07
+            <div style="margin: 6px 0 10px 0; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                <span class="pill pill-purple">AUPE-95 Aero Engine</span>
+                <span class="pill pill-blue">Real Digital Twin</span>
+                <span class="pill pill-green">Synced M1/M2/M3</span>
+                {fault_label_html}
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                <div class="stat-chip">
+                    <div class="stat-chip-val">{altitude_v:.0f}m</div>
+                    <div class="stat-chip-label">Altitude</div>
                 </div>
-                <div style="margin: 6px 0 10px 0; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
-                    <span class="pill pill-purple">Reconnaissance</span>
-                    <span class="pill pill-blue">Endurance</span>
-                    <span class="pill pill-green">Reliable</span>
-                    <span class="in-mission-pill">● IN MISSION</span>
-                    {fault_label_html}
+                <div class="stat-chip">
+                    <div class="stat-chip-val">{airspeed_v:.0f}kts</div>
+                    <div class="stat-chip-label">Airspeed</div>
                 </div>
-                <div style="font-size:0.78rem; color:#4b5e7a; margin-bottom:14px;">
-                    DRDO MALE UAV · Piston Aero Engine · SIH26054
+                <div class="stat-chip">
+                    <div class="stat-chip-val">{env_temp_v:.0f}°C</div>
+                    <div class="stat-chip-label">Env Temp</div>
                 </div>
-                <!-- Quick stats -->
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <div class="stat-chip">
-                        <div class="stat-chip-val">{altitude_v:.0f}m</div>
-                        <div class="stat-chip-label">Altitude</div>
-                    </div>
-                    <div class="stat-chip">
-                        <div class="stat-chip-val">{airspeed_v:.0f}kts</div>
-                        <div class="stat-chip-label">Airspeed</div>
-                    </div>
-                    <div class="stat-chip">
-                        <div class="stat-chip-val">{env_temp_v:.0f}°C</div>
-                        <div class="stat-chip-label">Env Temp</div>
-                    </div>
-                    <div class="stat-chip">
-                        <div class="stat-chip-val">{composite*100:.1f}%</div>
-                        <div class="stat-chip-label">Anomaly</div>
-                    </div>
+                <div class="stat-chip">
+                    <div class="stat-chip-val">{composite*100:.1f}%</div>
+                    <div class="stat-chip-label">Anomaly</div>
                 </div>
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+</div>"""
+    st.markdown(textwrap.dedent(hero_html), unsafe_allow_html=True)
 
 # ── Engine Health Gauge ───────────────────────────────────────────────────────
 with col_gauge:

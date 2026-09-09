@@ -126,55 +126,41 @@ if fault_active:
     }
     subsystem = subsystem_map.get(fault_label, "Unknown")
 
-    short_desc_map = {
-        "overheating":        "Excessive thermal load detected across EGT and CHT channels.",
-        "oil_pressure_drop":  "Oil pressure below nominal operating range — lubrication at risk.",
-        "misfire":            "Combustion irregularity detected — RPM and vibration anomalies present.",
-        "injector_fault":     "Fuel injector performance degraded — flow rate deviation detected.",
-        "vibration_anomaly":  "Abnormal vibration signature detected in drivetrain channels.",
-        "unknown":            "Elevated residual anomaly detected — fault classification in progress.",
-    }
-    short_desc = short_desc_map.get(fault_label, "Anomaly detected in engine parameters.")
-
-    st.markdown(f"""
-    <div class="fault-banner">
-        <div style="display:flex; align-items:flex-start; gap:14px; flex:1;">
-            <span style="font-size:1.8rem; flex-shrink:0; margin-top:2px;">{fault_icon}</span>
-            <div>
-                <div class="fault-banner-title">
-                    {fault_display.upper()} DETECTED
-                </div>
-                <div class="fault-banner-desc">{short_desc}</div>
-                <div style="margin-top:8px; font-size:0.72rem; color:#4b5e7a;">
-                    Fault ID: <span style="color:#94a3b8; font-family:monospace;">{fault_id}</span>
-                    &nbsp;·&nbsp; Subsystem: <span style="color:#94a3b8;">{subsystem}</span>
-                </div>
-            </div>
-        </div>
-        <div class="fault-banner-badges">
-            {severity_pill_html(severity)}
-            <div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3);
-                        border-radius:6px; padding:4px 10px; text-align:center;">
-                <div style="font-size:0.6rem; color:#64748b; letter-spacing:0.1em;
-                            text-transform:uppercase;">Confidence</div>
-                <div style="font-size:0.95rem; font-weight:800; color:#fca5a5;
-                            font-family:monospace;">{confidence*100:.0f}%</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-    <div class="clean-banner">
-        <span style="font-size:1.4rem;">✅</span>
+    banner_html = f"""<div class="fault-banner">
+    <div style="display:flex; align-items:center; gap:16px;">
+        <span style="font-size:2.4rem;">{fault_icon}</span>
         <div>
-            <div style="font-size:0.9rem; font-weight:700; color:#34d399;">No Faults Detected</div>
-            <div style="font-size:0.75rem; color:#10b981; opacity:0.75; margin-top:2px;">
-                All engine channels within nominal parameters · AI monitoring active
+            <div style="font-size:0.68rem; font-weight:700; letter-spacing:0.14em; color:#f87171; text-transform:uppercase;">
+                AI Fault Detection Alert
+            </div>
+            <div style="font-size:1.4rem; font-weight:800; color:#fef2f2; margin:2px 0;">
+                {fault_display}
+            </div>
+            <div style="font-size:0.75rem; color:#fca5a5; opacity:0.85;">
+                Detected at: {detected_str} &nbsp;·&nbsp; Subsystem: <span style="color:#94a3b8;">{subsystem}</span>
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="fault-banner-badges">
+        {severity_pill_html(severity)}
+        <div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:4px 10px; text-align:center;">
+            <div style="font-size:0.6rem; color:#64748b; letter-spacing:0.1em; text-transform:uppercase;">Confidence</div>
+            <div style="font-size:0.95rem; font-weight:800; color:#fca5a5; font-family:monospace;">{confidence*100:.0f}%</div>
+        </div>
+    </div>
+</div>"""
+    st.markdown(textwrap.dedent(banner_html), unsafe_allow_html=True)
+else:
+    clean_html = """<div class="clean-banner">
+    <span style="font-size:1.4rem;">✅</span>
+    <div>
+        <div style="font-size:0.9rem; font-weight:700; color:#34d399;">No Faults Detected</div>
+        <div style="font-size:0.75rem; color:#10b981; opacity:0.75; margin-top:2px;">
+            All engine channels within nominal parameters · AI monitoring active
+        </div>
+    </div>
+</div>"""
+    st.markdown(textwrap.dedent(clean_html), unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  ROW 1 — Fault Information  |  Key Evidence (Residual Analysis)
@@ -218,14 +204,10 @@ with col_info:
 
     st.markdown('<div class="dt-card" style="padding:16px 20px;">', unsafe_allow_html=True)
     for label, value, v_color in rows:
-        st.markdown(f"""
-        <div style="display:flex; justify-content:space-between; align-items:center;
-                    padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
-            <span style="font-size:0.75rem; color:#64748b; font-weight:600;">{label}</span>
-            <span style="font-size:0.8rem; font-weight:700; color:{v_color};
-                         font-family:'JetBrains Mono',monospace; text-align:right;">{value}</span>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div style="display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+    <span style="font-size:0.75rem; color:#64748b; font-weight:600;">{label}</span>
+    <span style="font-size:0.8rem; font-weight:700; color:{v_color}; font-family:'JetBrains Mono',monospace; text-align:right;">{value}</span>
+</div>""", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_evidence:
@@ -254,28 +236,17 @@ with col_evidence:
             # Also show actual residual from latest tick
             lo, hi, unit = _CHANNEL_RANGES.get(ch, (0.0, 1.0, ""))
             rng = max(hi - lo, 1e-6)
-            actual_res = latest.get("residuals", {}).get(ch, 0.0)
-            norm_res   = actual_res / rng
-
-            st.markdown(f"""
-            <div class="evidence-row">
-                <div style="display:flex; flex-direction:column; width:160px; flex-shrink:0;">
-                    <span class="evidence-label">{ch_label}</span>
-                    <span style="font-size:0.62rem; color:#4b5e7a; font-family:monospace;">
-                        norm: {norm_res:+.3f}
-                    </span>
-                </div>
-                <div class="evidence-bar-outer">
-                    <div class="evidence-bar-inner"
-                         style="width:{bar_pct}%; background:{bar_color};
-                                box-shadow: 0 0 6px {bar_color}60;">
-                    </div>
-                </div>
-                <div class="evidence-delta" style="color:{bar_color};">
-                    {sign}{actual_res:.3f}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            row_html = f"""<div class="evidence-row">
+    <div style="display:flex; flex-direction:column; width:160px; flex-shrink:0;">
+        <span class="evidence-label">{ch_label}</span>
+        <span style="font-size:0.62rem; color:#4b5e7a; font-family:monospace;">norm: {norm_res:+.3f}</span>
+    </div>
+    <div class="evidence-bar-outer">
+        <div class="evidence-bar-inner" style="width:{bar_pct}%; background:{bar_color}; box-shadow: 0 0 6px {bar_color}60;"></div>
+    </div>
+    <div class="evidence-delta" style="color:{bar_color};">{sign}{actual_res:.3f}</div>
+</div>"""
+            st.markdown(textwrap.dedent(row_html), unsafe_allow_html=True)
     else:
         st.markdown("""
         <div style="text-align:center; padding:24px; color:#4b5e7a; font-size:0.85rem;">
@@ -470,33 +441,26 @@ with col_actions:
         st.markdown('<div class="dt-card" style="padding:16px 20px;">', unsafe_allow_html=True)
         for icon, priority, action_text in actions:
             p_color = "#ef4444" if priority == "URGENT" else "#f59e0b" if priority == "CHECK" else "#3b82f6"
-            st.markdown(f"""
-            <div class="action-row">
-                <span class="action-icon">{icon}</span>
-                <div>
-                    <span style="font-size:0.62rem; font-weight:800; color:{p_color};
-                                 letter-spacing:0.12em; text-transform:uppercase;
-                                 margin-right:6px;">{priority}</span>
-                    <span style="font-size:0.8rem; color:#94a3b8;">{action_text}</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            act_html = f"""<div class="action-row">
+    <span class="action-icon">{icon}</span>
+    <div>
+        <span style="font-size:0.62rem; font-weight:800; color:{p_color}; letter-spacing:0.12em; text-transform:uppercase; margin-right:6px;">{priority}</span>
+        <span style="font-size:0.8rem; color:#94a3b8;">{action_text}</span>
+    </div>
+</div>"""
+            st.markdown(textwrap.dedent(act_html), unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
     else:
-        st.markdown("""
-        <div class="dt-card" style="padding:16px 20px;">
-            <div style="text-align:center; padding:16px; color:#4b5e7a;">
-                <div style="font-size:1.5rem; margin-bottom:8px;">✅</div>
-                <div style="font-size:0.85rem; font-weight:600; color:#10b981; margin-bottom:6px;">
-                    No Actions Required
-                </div>
-                <div style="font-size:0.75rem; color:#4b5e7a; line-height:1.6;">
-                    Engine operating within all nominal parameters.
-                    Continue monitoring — next scheduled inspection per maintenance plan.
-                </div>
-            </div>
+        no_act_html = """<div class="dt-card" style="padding:16px 20px;">
+    <div style="text-align:center; padding:16px; color:#4b5e7a;">
+        <div style="font-size:1.5rem; margin-bottom:8px;">✅</div>
+        <div style="font-size:0.85rem; font-weight:600; color:#10b981; margin-bottom:6px;">No Actions Required</div>
+        <div style="font-size:0.75rem; color:#4b5e7a; line-height:1.6;">
+            Engine operating within all nominal parameters. Continue monitoring — next scheduled inspection per maintenance plan.
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+</div>"""
+        st.markdown(textwrap.dedent(no_act_html), unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  BOTTOM — Generate Report button
