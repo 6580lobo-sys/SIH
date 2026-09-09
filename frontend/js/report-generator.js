@@ -63,7 +63,7 @@ class ReportGenerator {
         <div class="report-section-block" style="margin-top: 14px;">
           <div class="report-sec-heading">2. DIGITAL TWIN RESIDUAL ANALYSIS &amp; HEALTH INDEX</div>
           <p style="font-size: 12px; margin-bottom: 8px; line-height: 1.5;">
-            Telemetry ingested across redundant CAN-A/B bus was compared in real-time against the M1 Otto-cycle physics reference model. Residual divergence vectors were processed via M2 EWMA smoothing and M4 Random Forest Classifier.
+            Telemetry ingested across redundant CAN-A/B bus was compared in real-time against the Otto-cycle physics reference model. Residual divergence vectors were processed via EWMA smoothing and Random Forest Classifier.
           </p>
           <table class="report-table">
             <thead>
@@ -139,7 +139,7 @@ class ReportGenerator {
 
         <!-- Section 3: Machine Learning & Prognostics -->
         <div class="report-section-block" style="margin-top: 14px;">
-          <div class="report-sec-heading">3. M4 AI/ML PROGNOSTICS &amp; REMAINING USEFUL LIFE (RUL)</div>
+          <div class="report-sec-heading">3. AI/ML PROGNOSTICS &amp; REMAINING USEFUL LIFE (RUL)</div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
             <div style="padding: 10px; border: 1px solid #D0CDC3; background: #FAF9F6; font-size: 11.5px; line-height: 1.5;">
               <div>&bull; <strong>Composite Health Index:</strong> ${eng.healthIndex} / 100</div>

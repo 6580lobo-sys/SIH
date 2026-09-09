@@ -1,12 +1,12 @@
 /**
- * FAULT MONITORING, DIAGNOSTICS & M4 MACHINE LEARNING EXPLAINABILITY
+ * FAULT MONITORING, DIAGNOSTICS & MACHINE LEARNING EXPLAINABILITY
  * DRDO PS26054 · Integration of Isolation Forest, Random Forest Classifier,
- * and SHAP Feature Importance from SIH-main/M4.
+ * and SHAP Feature Importance from ML Pipeline.
  */
 
 class DiagnosticsModule {
   constructor() {
-    // Official DRDO evaluation metrics loaded from M4 reports
+    // Official DRDO evaluation metrics loaded from model reports
     this.mlMetrics = {
       modelName: 'RandomForestClassifier (100 Estimators, max_depth=12)',
       accuracy: 0.9456,
@@ -18,7 +18,7 @@ class DiagnosticsModule {
       anomalyF1: 0.8340
     };
 
-    // Official DRDO M4 Explanation Templates
+    // Official DRDO Explanation Templates
     this.explanationTemplates = {
       'healthy': {
         label: 'Healthy / Nominal Baseline',
@@ -381,7 +381,7 @@ class DiagnosticsModule {
           </div>
 
           <div class="reasoning-row">
-            <span class="reasoning-label">WHAT PARAMETERS CHANGED? (M1 RESIDUALS)</span>
+            <span class="reasoning-label">WHAT PARAMETERS CHANGED? (PHYSICS RESIDUALS)</span>
             <div style="margin-top: 4px; padding: 8px 12px; background: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 3px; font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">
               ${data.details.paramsChanged}
             </div>
@@ -417,7 +417,7 @@ class DiagnosticsModule {
     if (overlay) overlay.classList.remove('open');
   }
 
-  // Update M4 AI/ML Explainability Lab dynamically when fault changes
+  // Update AI/ML Explainability Lab dynamically when fault changes
   updateExplainability(faultKey) {
     const fault = this.explanationTemplates[faultKey] || this.explanationTemplates['healthy'];
 

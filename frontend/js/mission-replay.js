@@ -1,7 +1,7 @@
 /**
- * MISSION REPLAY & FLIGHT TELEMETRY INVESTIGATION MODULE (M2 DATASET INTEGRATION)
+ * MISSION REPLAY & FLIGHT TELEMETRY INVESTIGATION MODULE (SORTIE DATASET INTEGRATION)
  * Synchronized multi-trace timeline playback with mission event markers and anomaly forensics.
- * Supports loading real DRDO M2 mission runs (4.5h, 6.0h, 8.0h, 10.0h).
+ * Supports loading real DRDO sortie mission runs (4.5h, 6.0h, 8.0h, 10.0h).
  */
 
 class MissionReplayModule {
@@ -184,7 +184,7 @@ class MissionReplayModule {
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 8px; background: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 2px; font-family: var(--font-mono); font-size: 11px; margin-bottom: 8px;">
           <div><span style="color: var(--text-tertiary);">PARAM:</span> <strong>EGT CYL-03</strong></div>
           <div><span style="color: var(--text-tertiary);">OBSERVED:</span> <strong style="color: var(--amber-primary);">641.5 °C (+28.7°C)</strong></div>
-          <div><span style="color: var(--text-tertiary);">CONFIDENCE:</span> <strong>87% (M4 RANDOM FOREST)</strong></div>
+          <div><span style="color: var(--text-tertiary);">CONFIDENCE:</span> <strong>87% (RANDOM FOREST)</strong></div>
           <div><span style="color: var(--text-tertiary);">EST. CAUSE:</span> <strong>INJECTOR IMBALANCE</strong></div>
         </div>
         <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">

@@ -61,9 +61,9 @@
           </div>
         </div>
 
-        <!-- M3 Real-Time Fault Injection Simulator -->
+        <!-- Real-Time Fault Injection Simulator -->
         <div class="fault-injector-bar">
-          <span style="font-weight: 700; color: var(--amber-text); letter-spacing: 0.04em;">M3 FAULT:</span>
+          <span style="font-weight: 700; color: var(--amber-text); letter-spacing: 0.04em;">FAULT INJECTION:</span>
           <select id="m3-fault-selector" class="fault-select">
             <option value="healthy">00. HEALTHY (NOMINAL)</option>
             <option value="misfire_or_injector_fault" selected>01. INJECTOR IMBALANCE (CYL 3)</option>
@@ -189,11 +189,11 @@
             </button>
           </li>
           <li>
-            <button class="nav-button" data-view="view-m4-lab" title="M4 AI/ML Diagnostic & SHAP Lab">
+            <button class="nav-button" data-view="view-m4-lab" title="Manual Checking Diagnostic Lab">
               <svg class="nav-icon" viewBox="0 0 24 24">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-              <span class="nav-label">M4 AI LAB</span>
+              <span class="nav-label">MANUAL CHECKING</span>
             </button>
           </li>
           <li>
@@ -464,11 +464,11 @@
                 </div>
               </div>
 
-              <!-- M1 Physics Residuals Live Strip -->
+              <!-- Physics Residuals Live Strip -->
               <div style="margin-top: var(--space-xs); padding-top: var(--space-xs); border-top: 1px solid var(--border-subtle);">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
                   <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
-                    M1 PHYSICS RESIDUALS (&Delta; = SENSOR &minus; REFERENCE MODEL)
+                    PHYSICS RESIDUALS (&Delta; = SENSOR &minus; REFERENCE MODEL)
                   </span>
                   <span style="font-family: var(--font-mono); font-size: 9.5px; color: var(--text-tertiary);">
                     EWMA SMOOTHED &bull; ISO-13374
@@ -1039,12 +1039,12 @@
                   <button class="eng-btn replay-speed-btn" data-speed="10">10X</button>
                 </div>
                 <div style="display: flex; gap: 6px; align-items: center;">
-                  <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);">M2 DATASET:</span>
+                  <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);">SORTIE DATASET:</span>
                   <select id="replay-dataset-select" class="fault-select" style="font-size: 11px; padding: 2px 6px;">
-                    <option value="m2_output_6.0h.json" selected>M2 SORTIE ISR-04 (6.0h LOITER)</option>
-                    <option value="m2_output_4.5h.json">M2 SORTIE REC-02 (4.5h TRANSIT)</option>
-                    <option value="m2_output_8.0h.json">M2 SORTIE PAT-08 (8.0h PATROL)</option>
-                    <option value="m2_output_10.0h.json">M2 SORTIE END-10 (10.0h ENDURANCE)</option>
+                    <option value="m2_output_6.0h.json" selected>SORTIE ISR-04 (6.0h LOITER)</option>
+                    <option value="m2_output_4.5h.json">SORTIE REC-02 (4.5h TRANSIT)</option>
+                    <option value="m2_output_8.0h.json">SORTIE PAT-08 (8.0h PATROL)</option>
+                    <option value="m2_output_10.0h.json">SORTIE END-10 (10.0h ENDURANCE)</option>
                   </select>
                 </div>
               </div>
@@ -1290,48 +1290,16 @@
         </section>
 
         <!-- ==================================================================
-             VIEW: M4 AI/ML DIAGNOSTIC & SHAP EXPLAINABILITY LAB (SIH26054)
+             VIEW: MANUAL CHECKING & SHAP EXPLAINABILITY LAB (SIH26054)
              ================================================================== -->
         <section class="view-panel" id="view-m4-lab">
           <div class="eng-section-header" style="margin-bottom: var(--space-md);">
             <div>
-              <h1 class="eng-title">M4 AI/ML LAYER &bull; ANOMALY DETECTION, CLASSIFICATION &amp; SHAP EXPLAINABILITY</h1>
+              <h1 class="eng-title">MANUAL CHECKING &bull; ANOMALY DETECTION, CLASSIFICATION &amp; SHAP EXPLAINABILITY</h1>
               <span class="eng-subheading">DRDO PROBLEM STATEMENT PS26054 &bull; ISOLATION FOREST &amp; RANDOM FOREST ENSEMBLE</span>
             </div>
             <div style="font-family: var(--font-mono); font-size: 11px;">
               MODEL ACCURACY: <strong style="color: var(--green-primary);">94.56 %</strong> &bull; WEIGHTED F1: <strong style="color: var(--green-primary);">0.9333</strong>
-            </div>
-          </div>
-
-          <!-- ==========================================================
-               SCENARIO CONFIGURATION MANAGER (M3 DATA TO M4 ML ANALYSIS)
-               ========================================================== -->
-          <div class="eng-panel" style="margin-bottom: var(--space-md);">
-            <div class="sandbox-header">
-              <div>
-                <span class="eng-heading" style="margin-bottom: 2px;">SCENARIO CONFIGURATION MANAGER &bull; M3 TELEMETRY PRESETS</span>
-                <span class="eng-subheading">Switch between verified M3 operational and fault scenarios &bull; ML analyzes telemetry and calculates multi-class outcomes</span>
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="eng-btn active" id="btn-open-save-config" style="font-size: 11px; padding: 4px 10px;">
-                  + SAVE CUSTOM CONFIG
-                </button>
-              </div>
-            </div>
-
-            <!-- Scenario Selection Chips -->
-            <div class="scenario-btn-group" id="scenario-chips-container" style="margin-top: 10px;">
-              <button class="scenario-chip" data-scenario="healthy">00. NOMINAL CRUISE (HEALTHY)</button>
-              <button class="scenario-chip fault-active active" data-scenario="misfire_or_injector_fault">01. INJECTOR IMBALANCE (CYL 3)</button>
-              <button class="scenario-chip fault-active" data-scenario="abnormal_oil_temp">02. ABNORMAL OIL TEMP (125°C)</button>
-              <button class="scenario-chip fault-active" data-scenario="elevated_egt">03. ELEVATED EGT (820°C)</button>
-              <button class="scenario-chip fault-active" data-scenario="cht_overheating">04. CHT OVERHEATING (220°C)</button>
-              <button class="scenario-chip critical-active" data-scenario="oil_pressure_drop">05. OIL PRESSURE LOSS (-2.44 BAR)</button>
-              <button class="scenario-chip fault-active" data-scenario="vibration_bearing_fault">06. BEARING VIBRATION (3.8G)</button>
-              <button class="scenario-chip fault-active" data-scenario="fuel_mixture_drift">07. FUEL MIXTURE LEAN DRIFT</button>
-              <button class="scenario-chip fault-active" data-scenario="cooling_system_fault">08. COOLING BAFFLE FAULT</button>
-              <button class="scenario-chip fault-active" data-scenario="engine_overspeed">09. GOVERNOR OVERSPEED</button>
-              <button class="scenario-chip critical-active" data-scenario="compound_failure">10. COMPOUND MULTI-FAULT</button>
             </div>
           </div>
 
@@ -1342,7 +1310,7 @@
             <div class="sandbox-header">
               <div>
                 <span class="eng-heading" style="margin-bottom: 2px;">INTERACTIVE LIVE TELEMETRY PROBE &bull; MODEL RELIABILITY SANDBOX</span>
-                <span class="eng-subheading">Manually inject arbitrary live sensor values to test and prove that the M4 ML model reliably detects anomalies and classifies failure modes</span>
+                <span class="eng-subheading">Manually inject arbitrary live sensor values to test and prove that the ML model reliably detects anomalies and classifies failure modes</span>
               </div>
               <div style="display: flex; gap: 6px;">
                 <button class="eng-btn" id="btn-probe-quick-nominal" style="font-size: 10.5px; padding: 3px 8px;">NOMINAL</button>
@@ -1460,7 +1428,7 @@
             <div class="outcome-panel" id="probe-outcome-card">
               <!-- Left: ML Anomaly & Classification Outcome -->
               <div>
-                <span class="eng-heading" style="margin-bottom: 8px;">M4 MACHINE LEARNING MULTI-CLASS OUTCOME</span>
+                <span class="eng-heading" style="margin-bottom: 8px;">MACHINE LEARNING MULTI-CLASS OUTCOME</span>
                 <div class="outcome-metric-row">
                   <span>ISOLATION FOREST ANOMALY VERDICT:</span>
                   <span class="outcome-badge normal" id="probe-out-verdict">NOMINAL (SAFE)</span>
@@ -1485,9 +1453,9 @@
 
               <!-- Right: Physics Residuals & RUL Prognostics -->
               <div>
-                <span class="eng-heading" style="margin-bottom: 8px;">M1 PHYSICS &amp; M2 PROGNOSTIC OUTCOME</span>
+                <span class="eng-heading" style="margin-bottom: 8px;">PHYSICS &amp; PROGNOSTIC OUTCOME</span>
                 <div class="outcome-metric-row">
-                  <span>M1 PHYSICS RESIDUAL DRIFT:</span>
+                  <span>PHYSICS RESIDUAL DRIFT:</span>
                   <strong id="probe-out-residuals">ΔCHT: +0.4°C | ΔOilP: +0.01 bar</strong>
                 </div>
                 <div class="outcome-metric-row">
@@ -1961,7 +1929,7 @@
         <div class="drdo-modal-header">
           <div>
             <span class="eng-heading" style="margin-bottom: 2px;">SAVE CUSTOM SCENARIO CONFIGURATION</span>
-            <span class="eng-subheading">PERSIST M3 FAULT INJECTION &amp; FLIGHT PROFILE PARAMETERS</span>
+            <span class="eng-subheading">PERSIST FAULT INJECTION &amp; FLIGHT PROFILE PARAMETERS</span>
           </div>
           <button class="eng-btn" id="btn-close-save-modal" style="padding: 2px 7px;">&times;</button>
         </div>

@@ -1,7 +1,7 @@
 /**
- * DEFENCE TELEMETRY & PHYSICAL TWIN SIMULATION ENGINE (DRDO SIH26054 / M1-M2-M3)
- * Implements Otto-cycle physics models, M1 residual calculation, M2 EWMA smoothing,
- * M3 real-time fault injection, and dual-engine twin support (TAPAS-BH-201).
+ * DEFENCE TELEMETRY & PHYSICAL TWIN SIMULATION ENGINE (DRDO SIH26054)
+ * Implements Otto-cycle physics models, residual calculation, EWMA smoothing,
+ * real-time fault injection, and dual-engine twin support (TAPAS-BH-201).
  */
 
 class TelemetryEngine {
@@ -11,7 +11,7 @@ class TelemetryEngine {
     // Active engine selection: 'ENG-1' (Port / AE-01) or 'ENG-2' (Starboard / AE-02)
     this.activeEngine = 'ENG-1';
 
-    // Active M3 Fault Mode:
+    // Active Fault Injection Mode:
     // 'healthy', 'overheating', 'oil_pressure_drop', 'vibration_bearing_fault',
     // 'misfire_or_injector_fault', 'fuel_mixture_drift', 'cooling_system_fault', 'engine_overspeed'
     this.activeFault = 'misfire_or_injector_fault';
@@ -33,7 +33,7 @@ class TelemetryEngine {
         alternatorAmp: 42.1,
         timing: 24.5,
         healthIndex: 98.2,
-        // M1 Physics Residuals: Actual - Predicted
+        // Physics Residuals: Actual - Predicted
         residuals: {
           res_rpm: 4.2,
           res_cht: 1.8,
@@ -90,7 +90,7 @@ class TelemetryEngine {
       vibration: Array(this.bufferLength).fill(0.83),
       batteryVolt: Array(this.bufferLength).fill(28.4),
       timing: Array(this.bufferLength).fill(24.5),
-      // M1 Residual ring buffers
+      // Residual ring buffers
       res_egt: Array(this.bufferLength).fill(28.0),
       res_cht: Array(this.bufferLength).fill(1.8),
       res_oil_p: Array(this.bufferLength).fill(-0.04),
@@ -171,7 +171,7 @@ class TelemetryEngine {
     }
 
     if (!backendSynced) {
-      // Base values modified dynamically by M3 Fault Injections
+      // Base values modified dynamically by Fault Injections
       let targetRpm = 2438;
       let targetCht = 167.4;
       let targetEgt = 612.8;
@@ -393,7 +393,7 @@ class TelemetryEngine {
     const vib = Number(probe.vibration || 0.84);
     const missionHours = Number(probe.missionDurationHours || 8.0);
 
-    // M1 Physics Twin Expected Baseline
+    // Physics Twin Expected Baseline
     const predRpm = 1400 + (throttle / 100) * 1600;
     const predCht = 90 + (throttle / 100) * 115;
     const predEgt = 520 + (throttle / 100) * 140;
@@ -402,7 +402,7 @@ class TelemetryEngine {
     const predFuel = 3.0 + (throttle / 100) * 28;
     const predVib = 0.2 + (throttle / 100) * 0.9;
 
-    // M1 Residuals (Actual - Predicted)
+    // Physics Residuals (Actual - Predicted)
     const resRpm = +(rpm - predRpm).toFixed(1);
     const resCht = +(cht - predCht).toFixed(1);
     const resEgt = +(egt - predEgt).toFixed(1);
@@ -411,7 +411,7 @@ class TelemetryEngine {
     const resFuel = +(fuelFlow - predFuel).toFixed(2);
     const resVib = +(vib - predVib).toFixed(2);
 
-    // M2 Normalization & Composite Score
+    // Residual Normalization & Composite Score
     const normCht = Math.abs(resCht) / 15.0;
     const normEgt = Math.abs(resEgt) / 35.0;
     const normOilP = Math.abs(resOilP) / 0.8;
@@ -430,7 +430,7 @@ class TelemetryEngine {
       0.05 * (normRpm ** 2)
     );
 
-    // M2 Health Index (Exponential decay HI = 100 * exp(-0.5 * D))
+    // Health Index (Exponential decay HI = 100 * exp(-0.5 * D))
     const healthIndex = Math.max(0.0, Math.min(100.0, +(100.0 * Math.exp(-0.5 * compositeScore)).toFixed(1)));
 
     // ISO Severity
@@ -454,7 +454,7 @@ class TelemetryEngine {
       rulUpper = Math.min(maxRulMin * 1.1, +(rulEst + 1.96 * se).toFixed(1));
     }
 
-    // M4 Isolation Forest & Random Forest multi-class simulation
+    // Isolation Forest & Random Forest multi-class simulation
     let isAnomaly = compositeScore > 0.65;
     let anomalyScore = Math.min(1.0, Math.max(0.0, +(compositeScore / 2.8).toFixed(4)));
 

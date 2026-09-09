@@ -926,7 +926,7 @@
   color: var(--text-inverse);
 }
 
-/* M3 Real-Time Fault Injector Bar */
+/* Real-Time Fault Injector Bar */
 .fault-injector-bar {
   display: flex;
   align-items: center;
@@ -967,7 +967,7 @@
   letter-spacing: 0.02em;
 }
 
-/* M1 Physics Model Residuals Grid */
+/* Physics Model Residuals Grid */
 .residuals-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1003,7 +1003,7 @@
   color: var(--amber-primary);
 }
 
-/* M4 Explainability Lab & SHAP Importance Bars */
+/* Explainability Lab & SHAP Importance Bars */
 .shap-bar-item {
   margin-bottom: 8px;
 }
@@ -1168,7 +1168,7 @@
 }
 
 /* =============================================================================
-   SCENARIO CONFIGURATION MANAGER & LIVE PROBE SANDBOX (DRDO M1-M4)
+   LIVE PROBE SANDBOX & FAULT INJECTION (DRDO PROPULSION TWIN)
    ============================================================================= */
 
 .scenario-toolbar {

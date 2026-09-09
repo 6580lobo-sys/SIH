@@ -1,7 +1,7 @@
 /**
  * AEROSPACE DIGITAL TWIN & GCS APPLICATION CONTROLLER (DRDO SIH26054)
- * Coordinates dual-engine switching, M1 physics residuals, M3 fault injection,
- * M4 machine learning explainability, and report generation.
+ * Coordinates dual-engine switching, physics residuals, fault injection,
+ * machine learning explainability, and report generation.
  */
 
 class AppCoordinator {
@@ -21,13 +21,13 @@ class AppCoordinator {
     // 1. Start UTC Clock
     this.startClock();
 
-    // 2. Initialize Telemetry Engine (supports DRDO M1-M3)
+    // 2. Initialize Telemetry Engine (supports DRDO propulsion physics)
     this.telemetryEngine = new TelemetryEngine();
 
     // 3. Initialize Engine SVG Visualizer
     this.engineVisualizer = new EngineVisualizer('engine-canvas-mount');
 
-    // 4. Initialize Diagnostics & M4 ML Module
+    // 4. Initialize Diagnostics & ML Module
     this.diagnosticsModule = new DiagnosticsModule();
     window.diagnosticsModule = this.diagnosticsModule;
 
@@ -265,7 +265,7 @@ class AppCoordinator {
     if (healthEl) healthEl.style.color = scoreColor;
     if (triHealthEl) triHealthEl.style.color = scoreColor;
 
-    // M1 Physics Residuals readouts
+    // Physics Residuals readouts
     updateVal('res-val-rpm', (eng.residuals.res_rpm >= 0 ? '+' : '') + eng.residuals.res_rpm + ' RPM');
     updateVal('res-val-cht', (eng.residuals.res_cht >= 0 ? '+' : '') + eng.residuals.res_cht + ' °C');
     updateVal('res-val-egt', (eng.residuals.res_egt >= 0 ? '+' : '') + eng.residuals.res_egt + ' °C');
@@ -306,7 +306,7 @@ class AppCoordinator {
       window.AeroCharts.drawSparkline('sparkline-elec', history.batteryVolt, { min: 27, max: 29 });
       window.AeroCharts.drawSparkline('sparkline-time', history.timing, { min: 23, max: 26 });
 
-      // M1 Residual sparklines
+      // Physics Residual sparklines
       window.AeroCharts.drawSparkline('sparkline-res-egt', history.res_egt, { min: -10, max: 80, isWatch: true });
       window.AeroCharts.drawSparkline('sparkline-res-cht', history.res_cht, { min: -5, max: 30 });
       window.AeroCharts.drawSparkline('sparkline-res-oilp', history.res_oil_p, { min: -3, max: 1, isWatch: eng.residuals.res_oil_p < -1 });
