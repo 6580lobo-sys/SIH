@@ -221,8 +221,49 @@ class AppCoordinator {
     updateVal('telem-val-elec', `${eng.batteryVolt} / ${eng.alternatorAmp}`);
     updateVal('telem-val-time', eng.timing);
 
-    // Health score
+    // Health score & dynamic statements
     updateVal('overview-health-score', eng.healthIndex);
+    updateVal('overview-tri-health', `${eng.healthIndex} / 100`);
+
+    const healthEl = document.getElementById('overview-health-score');
+    const badgeEl = document.getElementById('overview-health-badge');
+    const primaryEl = document.getElementById('overview-health-primary');
+    const secondaryEl = document.getElementById('overview-health-secondary');
+    const triHealthEl = document.getElementById('overview-tri-health');
+
+    const score = Number(eng.healthIndex);
+    let scoreColor = 'var(--green-primary)';
+    if (score >= 85) {
+      scoreColor = 'var(--green-primary)';
+      if (badgeEl) {
+        badgeEl.textContent = 'ENGINE STATUS: NOMINAL';
+        badgeEl.style.color = 'var(--green-primary)';
+        badgeEl.style.borderColor = 'var(--green-primary)';
+      }
+      if (primaryEl) primaryEl.textContent = 'No critical abnormalities detected.';
+      if (secondaryEl) secondaryEl.textContent = 'All primary propulsion parameters remain inside expected operating envelope. Otto-cycle digital twin synchronized.';
+    } else if (score >= 60) {
+      scoreColor = 'var(--amber-text)';
+      if (badgeEl) {
+        badgeEl.textContent = 'ENGINE STATUS: CAUTION / DEGRADATION';
+        badgeEl.style.color = 'var(--amber-text)';
+        badgeEl.style.borderColor = 'var(--amber-text)';
+      }
+      if (primaryEl) primaryEl.textContent = `Anomaly signature detected: ${faultKey.replace(/_/g, ' ').toUpperCase()}`;
+      if (secondaryEl) secondaryEl.textContent = 'Subsystem physics model indicates abnormal drift. Predictive RUL window decreasing. Maintenance inspection advised.';
+    } else {
+      scoreColor = 'var(--red-primary)';
+      if (badgeEl) {
+        badgeEl.textContent = 'ENGINE STATUS: CRITICAL FAULT / RTB';
+        badgeEl.style.color = 'var(--red-primary)';
+        badgeEl.style.borderColor = 'var(--red-primary)';
+      }
+      if (primaryEl) primaryEl.textContent = `CRITICAL FAILURE ACTIVE: ${faultKey.replace(/_/g, ' ').toUpperCase()}`;
+      if (secondaryEl) secondaryEl.textContent = 'Residual breach exceeds safe flight margins. Isolation Forest & Random Forest classify urgent risk. Immediate RTB recommended.';
+    }
+
+    if (healthEl) healthEl.style.color = scoreColor;
+    if (triHealthEl) triHealthEl.style.color = scoreColor;
 
     // M1 Physics Residuals readouts
     updateVal('res-val-rpm', (eng.residuals.res_rpm >= 0 ? '+' : '') + eng.residuals.res_rpm + ' RPM');

@@ -257,17 +257,17 @@
             <!-- 5B. DOMINANT HEALTH STATEMENT & SUBSYSTEMS SNAPSHOT -->
             <div class="eng-panel health-statement-panel">
               <div>
-                <div class="health-status-badge">
+                <div class="health-status-badge" id="overview-health-badge">
                   ENGINE STATUS: NOMINAL
                 </div>
-                <div class="health-score-huge">
-                  98.2<span>/100</span>
+                <div class="health-score-huge" id="overview-health-score-container">
+                  <span id="overview-health-score">98.2</span><span>/100</span>
                 </div>
-                <div class="health-primary-text">
+                <div class="health-primary-text" id="overview-health-primary">
                   No critical abnormalities detected.
                 </div>
-                <div class="health-secondary-text">
-                  All primary propulsion parameters remain inside expected operating envelope. Cylinder 3 EGT trending slightly positive (+4.7%); vibration harmonic elevated but within operational limits.
+                <div class="health-secondary-text" id="overview-health-secondary">
+                  All primary propulsion parameters remain inside expected operating envelope.
                 </div>
               </div>
 
@@ -275,15 +275,15 @@
               <div class="health-tri-metrics">
                 <div class="tri-metric-item">
                   <span class="tri-metric-label">HEALTH INDEX</span>
-                  <span class="tri-metric-value" style="color: var(--green-primary);">98.2 / 100</span>
+                  <span class="tri-metric-value" id="overview-tri-health" style="color: var(--green-primary);">98.2 / 100</span>
                 </div>
                 <div class="tri-metric-item">
                   <span class="tri-metric-label">PREDICTION CONF</span>
-                  <span class="tri-metric-value">94.0 %</span>
+                  <span class="tri-metric-value" id="overview-tri-conf">94.0 %</span>
                 </div>
                 <div class="tri-metric-item">
                   <span class="tri-metric-label">DATA QUALITY</span>
-                  <span class="tri-metric-value" style="color: var(--green-primary);">99.1 %</span>
+                  <span class="tri-metric-value" id="overview-tri-quality" style="color: var(--green-primary);">99.1 %</span>
                 </div>
               </div>
 
@@ -1449,7 +1449,7 @@
             <!-- Action & Live Outcome Section -->
             <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px;">
               <button class="eng-btn active" id="btn-evaluate-live-probe" style="padding: 7px 18px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em;">
-                ⚡ EVALUATE LIVE INFERENCE &amp; PROVE RELIABILITY
+                EVALUATE LIVE INFERENCE &amp; PROVE RELIABILITY
               </button>
               <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);" id="probe-run-timestamp">
                 Press to compute digital twin residuals, health index, RUL confidence interval, and ML multi-class inference.
@@ -2002,13 +2002,13 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/charts.js?v=2.1"></script>
-  <script src="js/engine-visual.js?v=2.1"></script>
-  <script src="js/telemetry-engine.js?v=2.1"></script>
-  <script src="js/mission-replay.js?v=2.1"></script>
-  <script src="js/simulation.js?v=2.1"></script>
-  <script src="js/diagnostics.js?v=2.1"></script>
-  <script src="js/report-generator.js?v=2.1"></script>
-  <script src="js/app.js?v=2.1"></script>
+  <script src="js/charts.js?v=2.2"></script>
+  <script src="js/engine-visual.js?v=2.2"></script>
+  <script src="js/telemetry-engine.js?v=2.2"></script>
+  <script src="js/mission-replay.js?v=2.2"></script>
+  <script src="js/simulation.js?v=2.2"></script>
+  <script src="js/diagnostics.js?v=2.2"></script>
+  <script src="js/report-generator.js?v=2.2"></script>
+  <script src="js/app.js?v=2.2"></script>
 </body>
 </html>

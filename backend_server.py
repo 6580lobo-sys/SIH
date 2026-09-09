@@ -61,7 +61,8 @@ class ProbeRequest(BaseModel):
 
 
 class ScenarioSelectRequest(BaseModel):
-    scenario_key: str
+    scenario_key: Optional[str] = None
+    scenario_id: Optional[str] = None
 
 
 class CustomScenarioRequest(BaseModel):
@@ -90,6 +91,7 @@ def root():
 
 
 @app.get("/health")
+@app.get("/api/health")
 def health():
     return {
         "status": "healthy",
@@ -105,6 +107,7 @@ def get_status():
 
 
 @app.get("/api/telemetry/latest")
+@app.get("/api/telemetry/live")
 def get_latest_telemetry():
     latest = orchestrator.get_latest()
     if not latest:
@@ -126,13 +129,27 @@ def list_scenarios():
 @app.post("/api/scenarios/select")
 def select_scenario(req: ScenarioSelectRequest):
     all_s = orchestrator.scenario_manager.get_all_scenarios()
-    if req.scenario_key not in all_s:
-        raise HTTPException(status_code=404, detail=f"Scenario '{req.scenario_key}' not found.")
-    orchestrator.load_scenario(req.scenario_key)
+    key = req.scenario_key or req.scenario_id or "healthy"
+    aliases = {
+        "healthy": "healthy",
+        "nominal": "nominal_cruise",
+        "misfire": "misfire_or_injector_fault",
+        "overheating": "cht_overheating",
+        "oil_pressure_loss": "oil_pressure_drop",
+        "bearing_vibration": "vibration_bearing_fault",
+    }
+    normalized_key = aliases.get(key, key)
+    if normalized_key not in all_s:
+        matches = [k for k in all_s if key in k or k in key]
+        if matches:
+            normalized_key = matches[0]
+        else:
+            raise HTTPException(status_code=404, detail=f"Scenario '{key}' not found.")
+    orchestrator.load_scenario(normalized_key)
     return {
         "status": "scenario_loaded",
-        "active_scenario": req.scenario_key,
-        "details": all_s[req.scenario_key],
+        "active_scenario": normalized_key,
+        "details": all_s.get(normalized_key, {}),
     }
 
 

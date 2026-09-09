@@ -109,7 +109,7 @@ class FaultScenario(ABC):
     # ── dunder helpers ──────────────────────────────────────────────────
 
     def __repr__(self) -> str:
-        dur = f"{self.duration_s:.1f}s" if self.duration_s is not None else "∞"
+        dur = f"{self.duration_s:.1f}s" if self.duration_s is not None else "inf"
         return (
             f"{self.__class__.__name__}("
             f"name={self.name!r}, "

@@ -21,9 +21,19 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import sys
 import time
 from typing import Callable, Optional
+
+try:
+    _M1_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "M1", "src"))
+    if _M1_SRC not in sys.path:
+        sys.path.insert(0, _M1_SRC)
+    from twin_core.dynamics import EngineSimulator
+    _HAVE_ENGINE_SIM = True
+except Exception:
+    _HAVE_ENGINE_SIM = False
 
 from generator.environment import (
     ENVIRONMENT_PRESETS,
@@ -170,11 +180,17 @@ class TelemetryPublisher:
         self.rate_hz = rate_hz
         self.interval = 1.0 / rate_hz
         self.publish_cb = publish_cb or self._default_publish
-        self.fault_manager = fault_manager or FaultManager()
+        self.fault_manager = fault_manager if fault_manager is not None else FaultManager()
         self.environment: EnvironmentProfile = get_environment(environment_name)
         self.environment_name = environment_name
         self.throttle_mode = throttle_mode
         self._tick = 0
+        self._sim = EngineSimulator(ambient_temp=self.environment.ambient_temp_c, seed=99) if _HAVE_ENGINE_SIM else None
+
+    def reset_engine(self) -> None:
+        """Reset internal physical simulator state to nominal baseline."""
+        if _HAVE_ENGINE_SIM:
+            self._sim = EngineSimulator(ambient_temp=self.environment.ambient_temp_c, seed=99)
 
     # ── publish callback ────────────────────────────────────────────────
 
@@ -228,12 +244,27 @@ class TelemetryPublisher:
             altitude = self.environment.altitude_m
             ambient  = self.environment.ambient_temp_c
 
-            sample = healthy_sample(
-                throttle,
-                altitude_m=altitude,
-                ambient_temp_c=ambient,
-            )
-            sample["altitude_m"] = altitude
+            if self._sim is not None:
+                sim_out = self._sim.step(throttle, self.interval)
+                sample = {
+                    "rpm": sim_out["rpm"],
+                    "cht_c": sim_out["cht"],
+                    "egt_c": sim_out["egt"],
+                    "oil_pressure_kpa": sim_out["oil_pressure"] * 6.8948,
+                    "oil_temp_c": sim_out["oil_temp"],
+                    "fuel_flow_lph": sim_out["fuel_flow"],
+                    "vibration_g": sim_out["vibration_amplitude"],
+                    "throttle_pct": throttle,
+                    "ambient_temp_c": ambient,
+                    "altitude_m": altitude,
+                }
+            else:
+                sample = healthy_sample(
+                    throttle,
+                    altitude_m=altitude,
+                    ambient_temp_c=ambient,
+                )
+                sample["altitude_m"] = altitude
 
             # --- fault injection (class-based framework) -----------------
             if len(self.fault_manager) > 0:

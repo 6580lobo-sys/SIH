@@ -12,6 +12,8 @@ Integrates:
 from __future__ import annotations
 
 import collections
+import copy
+import math
 import os
 import sys
 import threading
@@ -237,42 +239,47 @@ class TelemetryFrame:
 
     def as_dict(self) -> dict:
         """Flat dictionary representation for JSON serialization & dashboard consumption."""
+        def _clean_num(val, default=0.0):
+            if val is None or (isinstance(val, float) and (math.isnan(val) or math.isinf(val))):
+                return default
+            return val
+
         return {
-            "timestamp":           self.timestamp,
+            "timestamp":           _clean_num(self.timestamp),
             "msg_id":              self.msg_id,
-            "rpm":                 self.rpm,
-            "cht":                 self.cht,
-            "egt":                 self.egt,
-            "oil_pressure":        self.oil_pressure,
-            "oil_temp":            self.oil_temp,
-            "fuel_flow":           self.fuel_flow,
-            "vibration_amplitude": self.vibration_amplitude,
-            "vibration_freq":      self.vibration_freq,
-            "throttle_cmd":        self.throttle_cmd,
-            "res_rpm":             self.res_rpm,
-            "res_cht":             self.res_cht,
-            "res_egt":             self.res_egt,
-            "res_oil_p":           self.res_oil_p,
-            "res_oil_t":           self.res_oil_t,
-            "res_fuel":            self.res_fuel,
-            "res_vib":             self.res_vib,
-            "composite_score":     self.composite_score,
-            "composite_ewma":      self.composite_ewma,
-            "health_index":        self.health_index,
+            "rpm":                 _clean_num(self.rpm, 2400.0),
+            "cht":                 _clean_num(self.cht, 167.0),
+            "egt":                 _clean_num(self.egt, 610.0),
+            "oil_pressure":        _clean_num(self.oil_pressure, 45.0),
+            "oil_temp":            _clean_num(self.oil_temp, 94.0),
+            "fuel_flow":           _clean_num(self.fuel_flow, 21.0),
+            "vibration_amplitude": _clean_num(self.vibration_amplitude, 0.08),
+            "vibration_freq":      _clean_num(self.vibration_freq, 36.0),
+            "throttle_cmd":        _clean_num(self.throttle_cmd, 65.0),
+            "res_rpm":             _clean_num(self.res_rpm),
+            "res_cht":             _clean_num(self.res_cht),
+            "res_egt":             _clean_num(self.res_egt),
+            "res_oil_p":           _clean_num(self.res_oil_p),
+            "res_oil_t":           _clean_num(self.res_oil_t),
+            "res_fuel":            _clean_num(self.res_fuel),
+            "res_vib":             _clean_num(self.res_vib),
+            "composite_score":     _clean_num(self.composite_score),
+            "composite_ewma":      _clean_num(self.composite_ewma),
+            "health_index":        _clean_num(self.health_index, 100.0),
             "health_status":       self.health_status,
             "severity_level":      self.severity_level,
-            "rul_est":             self.rul_est,
-            "rul_lower":           self.rul_lower,
-            "rul_upper":           self.rul_upper,
+            "rul_est":             _clean_num(self.rul_est, 0.0),
+            "rul_lower":           _clean_num(self.rul_lower, 0.0),
+            "rul_upper":           _clean_num(self.rul_upper, 0.0),
             "rul_status":          self.rul_status,
-            "health_slope":        self.health_slope,
-            "res_cht_ewma":        self.res_cht_ewma,
-            "res_egt_ewma":        self.res_egt_ewma,
-            "res_vib_std_w":       self.res_vib_std_w,
+            "health_slope":        _clean_num(self.health_slope, 0.0),
+            "res_cht_ewma":        _clean_num(self.res_cht_ewma),
+            "res_egt_ewma":        _clean_num(self.res_egt_ewma),
+            "res_vib_std_w":       _clean_num(self.res_vib_std_w),
             "ml_anomaly":          self.ml_anomaly,
-            "ml_anomaly_score":    self.ml_anomaly_score,
+            "ml_anomaly_score":    _clean_num(self.ml_anomaly_score),
             "ml_fault_type":       self.ml_fault_type,
-            "ml_confidence":       self.ml_confidence,
+            "ml_confidence":       _clean_num(self.ml_confidence),
             "ml_health_state":     self.ml_health_state,
             "ml_severity":         self.ml_severity,
             "ml_probabilities":    self.ml_probabilities,
@@ -330,11 +337,18 @@ class M1TwinAdapter:
 
     def step(self, msg: "EngineTelemetryMessage", dt: float) -> Dict[str, float]:
         self._latest_m3_actual = self._msg_to_m1_dict(msg)
-        pair    = self._twin.step(msg.throttle_cmd, dt)
-        raw_out = self._residual_eng.update(pair)
+        pair = self._twin.step(msg.throttle_cmd, dt)
+        self._residual_eng.update(pair)
+        pred = pair["predicted"]
+        act = pair["actual"]
         return {
-            m2_col: raw_out["residuals"].get(m1_key, 0.0)
-            for m1_key, m2_col in M1_TO_M2_CHANNEL_MAP.items()
+            "res_rpm": act["rpm"] - pred["rpm"],
+            "res_cht": act["cht"] - pred["cht"],
+            "res_egt": act["egt"] - pred["egt"],
+            "res_oil_p": (act["oil_pressure"] - pred["oil_pressure"]) * 0.0689476,
+            "res_oil_t": act["oil_temp"] - pred["oil_temp"],
+            "res_fuel": act["fuel_flow"] - pred["fuel_flow"],
+            "res_vib": act["vibration_amplitude"] - pred["vibration_amplitude"],
         }
 
     def signature(self, threshold: float = 0.03) -> dict:
@@ -342,6 +356,11 @@ class M1TwinAdapter:
 
     def reset(self) -> None:
         self._residual_eng.reset()
+        self._twin = DigitalTwin(
+            actual_source=self._m3_bridge,
+            ambient_temp=25.0,
+            ref_seed=42,
+        )
         self._latest_m3_actual = None
 
 
@@ -568,6 +587,214 @@ class M4MachineLearningAdapter:
 
 
 # ---------------------------------------------------------------------------
+# Continuous Scenario Fault Generators for Real-Time GCS Operation
+# ---------------------------------------------------------------------------
+
+class ContinuousScenarioFault(FaultScenario):
+    """Base class for active GCS scenario faults that persist until cleared."""
+
+    def __init__(self, name: str, start_time_s: float = 0.0) -> None:
+        super().__init__(name=name, start_time_s=start_time_s, duration_s=86400.0)
+
+    def is_active(self, t_s: float) -> bool:
+        return t_s >= self.start_time_s
+
+    def ramp(self, elapsed_s: float, tau: float = 0.8) -> float:
+        """Smooth exponential ramp reaching ~95% in 2-3 seconds."""
+        if elapsed_s <= 0:
+            return 0.0
+        return 1.0 - math.exp(-elapsed_s / tau)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(name={self.name!r}, start={self.start_time_s:.1f}s)"
+
+
+class ContinuousOverheatingFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.85) -> None:
+        super().__init__(name="overheating", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=2.0) * self.severity
+        delta_cht = 55.0 * p
+        delta_egt = 110.0 * p
+        delta_oil = 25.0 * p
+
+        for k in ("cht_c", "cht"):
+            if k in v: v[k] += delta_cht
+        for k in ("egt_c", "egt"):
+            if k in v: v[k] += delta_egt
+        for k in ("oil_temp_c", "oil_temp"):
+            if k in v: v[k] += delta_oil
+        return v
+
+
+class ContinuousOilPressureDropFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.85) -> None:
+        super().__init__(name="oil_pressure_drop", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=1.5) * self.severity
+        drop_factor = 1.0 - (0.75 * p)
+
+        for k in ("oil_pressure_kpa", "oil_pressure"):
+            if k in v: v[k] *= drop_factor
+        for k in ("oil_temp_c", "oil_temp"):
+            if k in v: v[k] += 22.0 * p
+        return v
+
+
+class ContinuousVibrationFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.85) -> None:
+        super().__init__(name="vibration_bearing_fault", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=1.5) * self.severity
+        delta = 0.18 * p
+
+        if "vibration_amplitude" in v:
+            v["vibration_amplitude"] += delta
+        if "vibration_g" in v:
+            v["vibration_g"] += delta
+        if "vibration_freq" in v:
+            v["vibration_freq"] = 35.0 + (15.0 * p)
+        return v
+
+
+class ContinuousAbnormalOilTempFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.80) -> None:
+        super().__init__(name="abnormal_oil_temp", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=2.5) * self.severity
+        for k in ("oil_temp_c", "oil_temp"):
+            if k in v: v[k] += 32.0 * p
+        for k in ("oil_pressure_kpa", "oil_pressure"):
+            if k in v: v[k] *= (1.0 - 0.25 * p)
+        return v
+
+
+class ContinuousElevatedEgtFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.80) -> None:
+        super().__init__(name="elevated_egt", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=2.0) * self.severity
+        for k in ("egt_c", "egt"):
+            if k in v: v[k] += 180.0 * p
+        for k in ("fuel_flow", "fuel_flow_g_s"):
+            if k in v: v[k] += 3.5 * p
+        return v
+
+
+class ContinuousInjectorFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.80) -> None:
+        super().__init__(name="misfire_or_injector_fault", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=1.5) * self.severity
+        pulse = math.sin(t_s * 6.28 * 2.0)
+        for k in ("egt_c", "egt"):
+            if k in v: v[k] += 48.0 * p
+        if "rpm" in v:
+            v["rpm"] -= (35.0 * p + 15.0 * pulse * p)
+        if "vibration_amplitude" in v:
+            v["vibration_amplitude"] += 0.07 * p
+        if "vibration_g" in v:
+            v["vibration_g"] += 0.9 * p
+        return v
+
+
+class ContinuousFuelMixtureFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.75) -> None:
+        super().__init__(name="fuel_mixture_drift", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=2.5) * self.severity
+        for k in ("fuel_flow", "fuel_flow_g_s"):
+            if k in v: v[k] += 6.2 * p
+        for k in ("egt_c", "egt"):
+            if k in v: v[k] += 120.0 * p
+        return v
+
+
+class ContinuousCoolingFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.80) -> None:
+        super().__init__(name="cooling_system_fault", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=2.0) * self.severity
+        for k in ("cht_c", "cht"):
+            if k in v: v[k] += 38.0 * p
+        for k in ("oil_temp_c", "oil_temp"):
+            if k in v: v[k] += 16.0 * p
+        return v
+
+
+class ContinuousOverspeedFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.80) -> None:
+        super().__init__(name="engine_overspeed", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=1.5) * self.severity
+        if "rpm" in v:
+            v["rpm"] += 380.0 * p
+        if "throttle_cmd" in v:
+            v["throttle_cmd"] = min(100.0, v["throttle_cmd"] + 25.0 * p)
+        return v
+
+
+class ContinuousCompoundFault(ContinuousScenarioFault):
+    def __init__(self, start_time_s: float = 0.0, severity: float = 0.85) -> None:
+        super().__init__(name="compound_failure", start_time_s=start_time_s)
+        self.severity = severity
+
+    def apply(self, t_s: float, healthy_values: dict) -> dict:
+        v = copy.deepcopy(healthy_values)
+        el = max(0.0, t_s - self.start_time_s)
+        p = self.ramp(el, tau=2.0) * self.severity
+        for k in ("oil_pressure_kpa", "oil_pressure"):
+            if k in v: v[k] *= (1.0 - 0.70 * p)
+        for k in ("cht_c", "cht"):
+            if k in v: v[k] += 50.0 * p
+        for k in ("egt_c", "egt"):
+            if k in v: v[k] += 95.0 * p
+        for k in ("oil_temp_c", "oil_temp"):
+            if k in v: v[k] += 26.0 * p
+        if "vibration_amplitude" in v:
+            v["vibration_amplitude"] = 0.08 + (0.24 * p)
+        if "vibration_g" in v:
+            v["vibration_g"] = 0.8 + (2.8 * p)
+        return v
+
+
+# ---------------------------------------------------------------------------
 # Scenario Configuration Manager
 # ---------------------------------------------------------------------------
 
@@ -582,70 +809,103 @@ class ScenarioManager:
             "throttle_mode": "smooth",
             "faults": [],
         },
+        "healthy": {
+            "name": "Healthy Baseline",
+            "description": "Standard cruise at 2400 RPM, 65% throttle, standard day, no faults.",
+            "environment": "standard_day",
+            "throttle_mode": "smooth",
+            "faults": [],
+        },
         "abnormal_oil_temp": {
             "name": "Abnormal Oil Temp (Thermal Degradation)",
             "description": "Oil cooler airflow restriction, oil temperature escalation past 120°C.",
             "environment": "hot_day",
             "throttle_mode": "smooth",
-            "faults": [
-                {"type": "OverheatingFault", "severity": 0.75, "start_time_s": 2.0, "duration_s": 30.0}
-            ],
+            "faults": [{"type": "ContinuousAbnormalOilTempFault", "severity": 0.80}],
         },
         "elevated_egt": {
             "name": "Elevated Exhaust Gas Temp (EGT)",
             "description": "Injector thermal drift inducing high exhaust temperature in Cylinder #3.",
             "environment": "standard_day",
             "throttle_mode": "smooth",
-            "faults": [
-                {"type": "InjectorFault", "severity": 0.70, "start_time_s": 2.0, "duration_s": 30.0}
-            ],
+            "faults": [{"type": "ContinuousElevatedEgtFault", "severity": 0.80}],
         },
         "cht_overheating": {
             "name": "Severe CHT Thermal Runaway",
             "description": "Cooling baffle deformation causing rapid CHT escalation past 210°C.",
             "environment": "hot_day",
             "throttle_mode": "smooth",
-            "faults": [
-                {"type": "OverheatingFault", "severity": 0.95, "start_time_s": 1.0, "duration_s": 30.0}
-            ],
+            "faults": [{"type": "ContinuousOverheatingFault", "severity": 0.90}],
+        },
+        "overheating": {
+            "name": "Overheating Scenario",
+            "description": "Severe thermal runaway with high CHT and EGT.",
+            "environment": "hot_day",
+            "throttle_mode": "smooth",
+            "faults": [{"type": "ContinuousOverheatingFault", "severity": 0.90}],
         },
         "oil_pressure_loss": {
             "name": "Critical Oil Pressure Loss",
-            "description": "Scavenge pump cavitation dropping oil pressure from 45 PSI down to 14 PSI.",
+            "description": "Scavenge pump cavitation dropping oil pressure down to 14 PSI.",
             "environment": "standard_day",
             "throttle_mode": "smooth",
-            "faults": [
-                {"type": "OilPressureDropFault", "severity": 0.85, "start_time_s": 1.5, "duration_s": 30.0}
-            ],
+            "faults": [{"type": "ContinuousOilPressureDropFault", "severity": 0.85}],
+        },
+        "oil_pressure_drop": {
+            "name": "Critical Oil Pressure Drop",
+            "description": "Scavenge pump cavitation dropping oil pressure down to 14 PSI.",
+            "environment": "standard_day",
+            "throttle_mode": "smooth",
+            "faults": [{"type": "ContinuousOilPressureDropFault", "severity": 0.85}],
         },
         "bearing_vibration": {
             "name": "Bearing Wear & Vibration Anomaly",
             "description": "Main journal bearing spalling causing vibration amplitude surge to 3.8g.",
             "environment": "standard_day",
             "throttle_mode": "rapid_transient",
-            "faults": [
-                {"type": "VibrationSpikeFault", "severity": 0.80, "start_time_s": 2.0, "duration_s": 30.0}
-            ],
+            "faults": [{"type": "ContinuousVibrationFault", "severity": 0.85}],
+        },
+        "vibration_bearing_fault": {
+            "name": "Bearing Wear & Vibration Anomaly",
+            "description": "Main journal bearing spalling causing vibration amplitude surge to 3.8g.",
+            "environment": "standard_day",
+            "throttle_mode": "rapid_transient",
+            "faults": [{"type": "ContinuousVibrationFault", "severity": 0.85}],
+        },
+        "misfire_or_injector_fault": {
+            "name": "Injector Imbalance & Cylinder Misfire",
+            "description": "Cylinder 3 injector blockage leading to high EGT variance and RPM dip.",
+            "environment": "standard_day",
+            "throttle_mode": "smooth",
+            "faults": [{"type": "ContinuousInjectorFault", "severity": 0.80}],
         },
         "fuel_mixture_drift": {
             "name": "Fuel Mixture Lean Drift",
-            "description": "Fuel pressure regulator bias causing lean surging and sporadic misfire.",
+            "description": "Fuel pressure regulator bias causing lean surging and high fuel consumption.",
             "environment": "high_altitude",
             "throttle_mode": "smooth",
-            "faults": [
-                {"type": "MisfireFault", "severity": 0.65, "start_time_s": 2.5, "duration_s": 30.0}
-            ],
+            "faults": [{"type": "ContinuousFuelMixtureFault", "severity": 0.75}],
+        },
+        "cooling_system_fault": {
+            "name": "Cooling Baffle Obstruction",
+            "description": "Ram-air cooling cowl obstruction causing CHT escalation.",
+            "environment": "hot_day",
+            "throttle_mode": "smooth",
+            "faults": [{"type": "ContinuousCoolingFault", "severity": 0.80}],
+        },
+        "engine_overspeed": {
+            "name": "Governor Overspeed Runaway",
+            "description": "Propeller pitch governor failure causing engine overspeed past redline.",
+            "environment": "standard_day",
+            "throttle_mode": "rapid_transient",
+            "faults": [{"type": "ContinuousOverspeedFault", "severity": 0.80}],
         },
         "compound_failure": {
             "name": "Compound Multi-Fault Breakdown",
             "description": "Oil pressure drop accompanied by severe overheating and vibration spike.",
             "environment": "hot_day",
             "throttle_mode": "rapid_transient",
-            "faults": [
-                {"type": "OilPressureDropFault", "severity": 0.70, "start_time_s": 1.0, "duration_s": 30.0},
-                {"type": "OverheatingFault", "severity": 0.80, "start_time_s": 3.0, "duration_s": 30.0},
-                {"type": "VibrationSpikeFault", "severity": 0.75, "start_time_s": 5.0, "duration_s": 30.0},
-            ],
+            "faults": [{"type": "ContinuousCompoundFault", "severity": 0.85}],
         },
     }
 
@@ -660,7 +920,7 @@ class ScenarioManager:
     def save_custom_scenario(self, key: str, scenario_data: dict) -> None:
         self._custom_scenarios[key] = scenario_data
 
-    def create_fault_objects(self, scenario_key: str) -> List[FaultScenario]:
+    def create_fault_objects(self, scenario_key: str, base_time_s: float = 0.0) -> List[FaultScenario]:
         all_s = self.get_all_scenarios()
         cfg = all_s.get(scenario_key)
         if not cfg:
@@ -669,26 +929,28 @@ class ScenarioManager:
         fault_objs: List[FaultScenario] = []
         for f in cfg.get("faults", []):
             ftype = f.get("type", "")
-            sev = float(f.get("severity", 0.5))
-            start = float(f.get("start_time_s", 0.0))
-            dur = float(f.get("duration_s", 30.0))
+            sev = float(f.get("severity", 0.75))
 
-            if ftype == "OverheatingFault":
-                fault_objs.append(OverheatingFault(severity=sev, start_time_s=start, duration_s=dur))
-            elif ftype == "OilPressureDropFault":
-                fault_objs.append(OilPressureDropFault(severity=sev, start_time_s=start, duration_s=dur))
-            elif ftype == "MisfireFault":
-                fault_objs.append(MisfireFault(severity=sev, start_time_s=start, duration_s=dur))
-            elif ftype == "InjectorFault":
-                fault_objs.append(InjectorFault(severity=sev, start_time_s=start, duration_s=dur))
-            elif ftype == "VibrationSpikeFault":
-                fault_objs.append(VibrationSpikeFault(severity=sev, start_time_s=start, duration_s=dur))
-            elif ftype == "FuelMixtureDriftFault" and FuelMixtureDriftFault:
-                fault_objs.append(FuelMixtureDriftFault(severity=sev, start_time_s=start, duration_s=dur))
-            elif ftype == "CoolingBaffleFault" and CoolingBaffleFault:
-                fault_objs.append(CoolingBaffleFault(severity=sev, start_time_s=start, duration_s=dur))
-            elif ftype == "EngineOverspeedFault" and EngineOverspeedFault:
-                fault_objs.append(EngineOverspeedFault(severity=sev, start_time_s=start, duration_s=dur))
+            if ftype in ("ContinuousOverheatingFault", "OverheatingFault"):
+                fault_objs.append(ContinuousOverheatingFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousOilPressureDropFault", "OilPressureDropFault"):
+                fault_objs.append(ContinuousOilPressureDropFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousVibrationFault", "VibrationSpikeFault"):
+                fault_objs.append(ContinuousVibrationFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousAbnormalOilTempFault", "AbnormalOilTempFault"):
+                fault_objs.append(ContinuousAbnormalOilTempFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousElevatedEgtFault", "ElevatedEgtFault"):
+                fault_objs.append(ContinuousElevatedEgtFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousInjectorFault", "InjectorFault", "MisfireFault"):
+                fault_objs.append(ContinuousInjectorFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousFuelMixtureFault", "FuelMixtureDriftFault"):
+                fault_objs.append(ContinuousFuelMixtureFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousCoolingFault", "CoolingBaffleFault"):
+                fault_objs.append(ContinuousCoolingFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousOverspeedFault", "EngineOverspeedFault"):
+                fault_objs.append(ContinuousOverspeedFault(start_time_s=base_time_s, severity=sev))
+            elif ftype in ("ContinuousCompoundFault", "CompoundFault"):
+                fault_objs.append(ContinuousCompoundFault(start_time_s=base_time_s, severity=sev))
         return fault_objs
 
 
@@ -743,6 +1005,7 @@ class Orchestrator:
         self._tick_count = 0
         self._start_wall: Optional[float] = None
         self._lock = threading.Lock()
+        self._publisher: Optional[TelemetryPublisher] = None
 
     # -- Subscriber management --------------------------------------------
 
@@ -767,12 +1030,21 @@ class Orchestrator:
         """Switch operational scenario and configure corresponding M3 fault generators."""
         self.clear_faults()
         self._current_scenario = scenario_key
+        if scenario_key in ("healthy", "nominal_cruise", "nominal"):
+            self._m2.reset()
+            self._adapter.reset()
+            if self._publisher is not None:
+                self._publisher.reset_engine()
+            return
+
         scenarios = self._scenario_mgr.get_all_scenarios()
         cfg = scenarios.get(scenario_key)
         if cfg:
             self._environment = cfg.get("environment", "standard_day")
             self._throttle_mode = cfg.get("throttle_mode", "smooth")
-            for f_obj in self._scenario_mgr.create_fault_objects(scenario_key):
+            current_ts = self._latest.timestamp if self._latest is not None else 0.0
+            base_ts = max(0.0, current_ts - 0.2)
+            for f_obj in self._scenario_mgr.create_fault_objects(scenario_key, base_time_s=base_ts):
                 self.inject_fault(f_obj)
 
     def inject_fault(self, scenario: FaultScenario) -> None:
@@ -1010,6 +1282,7 @@ class Orchestrator:
             environment_name = self._environment,
             throttle_mode    = self._throttle_mode,
         )
+        self._publisher = publisher
         publisher.run(duration_s=duration_s if duration_s is not None else 86400.0)
         self._running = False
 

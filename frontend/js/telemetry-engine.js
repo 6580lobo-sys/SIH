@@ -281,12 +281,7 @@ class TelemetryEngine {
         default:
           targetHealth = 99.4;
           resRpm = 1.2;
-          resCht = 0.4;
-          resEgt = 1.5;
-          resOilP = 0.01;
-          resOilT = 0.1;
-          resFuel = 0.05;
-          resVib = 0.01;
+          targetHealth = 98.4;
           break;
       }
 
@@ -301,13 +296,13 @@ class TelemetryEngine {
       eng.healthIndex = +(targetHealth + jitter(0.2)).toFixed(1);
 
       eng.residuals.res_rpm = +(resRpm + jitter(1.5)).toFixed(1);
+      eng.residuals.res_cht = +(resCht + jitter(0.3)).toFixed(1);
+      eng.residuals.res_egt = +(resEgt + jitter(0.8)).toFixed(1);
+      eng.residuals.res_oil_p = +(resOilP + jitter(0.02)).toFixed(2);
+      eng.residuals.res_oil_t = +(resOilT + jitter(0.2)).toFixed(1);
+      eng.residuals.res_fuel = +(resFuel + jitter(0.1)).toFixed(2);
+      eng.residuals.res_vib = +(resVib + jitter(0.01)).toFixed(3);
     }
-    eng.residuals.res_cht = +(resCht + jitter(0.3)).toFixed(1);
-    eng.residuals.res_egt = +(resEgt + jitter(0.8)).toFixed(1);
-    eng.residuals.res_oil_p = +(resOilP + jitter(0.02)).toFixed(2);
-    eng.residuals.res_oil_t = +(resOilT + jitter(0.2)).toFixed(1);
-    eng.residuals.res_fuel = +(resFuel + jitter(0.1)).toFixed(2);
-    eng.residuals.res_vib = +(resVib + jitter(0.01)).toFixed(3);
 
     // Update history buffers
     const pushBuf = (key, val) => {
