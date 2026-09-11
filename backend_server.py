@@ -12,6 +12,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+FRONTEND_DIR = os.path.join(_HERE, "frontend")
+
+app.mount("/css", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css")), name="css")
+app.mount("/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="js")
+app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
+app.mount("/data", StaticFiles(directory=os.path.join(FRONTEND_DIR, "data")), name="data")
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
@@ -77,17 +85,9 @@ class CustomScenarioRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {
-        "service": "DRDO SIH26054 Aero-Piston Engine Digital Twin Backend",
-        "status": "online",
-        "orchestrator_running": orchestrator._running,
-        "current_scenario": orchestrator._current_scenario,
-        "tick_count": orchestrator._tick_count,
-        "docs_url": "http://localhost:8000/docs",
-        "latest_telemetry_url": "http://localhost:8000/api/telemetry/latest",
-        "health_url": "http://localhost:8000/health",
-        "scenarios_url": "http://localhost:8000/api/scenarios"
-    }
+    return FileResponse(
+        os.path.join(FRONTEND_DIR, "index.html")
+    )
 
 
 @app.get("/health")
