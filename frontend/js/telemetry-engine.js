@@ -126,7 +126,7 @@ class TelemetryEngine {
 
   injectFault(faultType) {
     this.activeFault = faultType;
-    fetch('http://localhost:8000/api/scenarios/select', {
+    fetch('/api/scenarios/select', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scenario_key: faultType })
@@ -140,7 +140,7 @@ class TelemetryEngine {
 
     let backendSynced = false;
     try {
-      const res = await fetch('http://localhost:8000/api/telemetry/latest');
+      const res = await fetch('/api/telemetry/latest');
       if (res.ok) {
         const data = await res.json();
         if (data && data.rpm !== undefined) {
