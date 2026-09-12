@@ -1,0 +1,2 @@
+[tool.vercel]
+entrypoint = "M4/ml/api/main.py"
